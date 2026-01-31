@@ -1,3 +1,3 @@
 echo "Tearing down Airflow containers..."
 
-docker compose --file .airflow.dockerfile down --env-file .env down -v
+docker compose --file docker-compose.yml --env-file .env down -v
