@@ -1,0 +1,8 @@
+google-api-core==2.28.1
+google-auth==2.47.0
+google-cloud-storage==3.7.0
+google-cloud-bigquery-storage==2.36.0
+google-cloud-bigquery==3.39.0
+pandas==2.1.4
+pandas-gbq==0.33.0
+playwright==1.58.0
