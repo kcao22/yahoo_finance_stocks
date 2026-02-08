@@ -333,5 +333,20 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  # Browserless chrome
+  playwright-brwoser:
+    image: browserless/chrome:latest
+    ports:
+      - "3000:3000"
+    environment:
+          - MAX_CONCURRENT_SESSIONS=5
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
 volumes:
   postgres-db-volume:
