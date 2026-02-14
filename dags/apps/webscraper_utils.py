@@ -57,13 +57,13 @@ class GlassdoorScraper(WebScraper):
         # Browser is also heavier / more resource intensive
         page = await self.context.new_page()
         # Proceed once basic HTML loads
-        page.goto(self.url, wait_until="documentloaded", timeout=60000)
+        await page.goto(self.url, wait_until="documentloaded", timeout=60000)
         # Wait for login auth modal pop up. Close if it appears.
         await self.close_auth_modal(page)
         # While there are more jobs to load, click load more button
         await self.load_more(page)
-        
-    
+        # ul > li tells playwright to navigate to travel to the parent class and then list child classes nested under
+        job_cards = page.locator("ul.JobsList_jobsList_lqjTr > li")
         
     async def close_auth_modal(self, page):
         """
@@ -72,7 +72,7 @@ class GlassdoorScraper(WebScraper):
         # Set CSS path to modal button
         auth_modal_button = "button[data-test='auth-modal-close-button']"
         try:
-            await page.wait_for_selector(auth_modal_button, state="visible", timeout=5000)
+            await page.wait_for_selector(auth_modal_button, state="visible", timeout=2500)
             print(f"Authentication modal detected. Closing...")
             # Click selector button
             await page.click(auth_modal_button)
@@ -86,13 +86,16 @@ class GlassdoorScraper(WebScraper):
         Clicks load more jobs if more job listings are available.
         """
         # Set CSS path to load more button
-        load_more_button = "button[data-test='load-more']"
+        # User locator insted of wait for selector to account for page changes after clicking load more button.
+        load_more_button = page.locator("button[data-test='load-more']")
         while True:
             try:
-                await page.wait_for_selector(load_more_button, state="visible", timeout=6000)
+                await load_more_button.wait_for(load_more_button, state="visible", timeout=6000)
                 print(f"Load more button detected. Clicking...")
                 # Click selector button
                 await page.click(load_more_button)
+                await page.wait_for_load_state("networkidle", timeout=5000)
+                await self.close_auth_modal(page)
             except:
                 print(f"No further load more buttons detected. Continuing with scraping...")
                 break
