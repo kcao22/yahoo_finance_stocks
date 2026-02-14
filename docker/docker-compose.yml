@@ -334,7 +334,7 @@ services:
         condition: service_completed_successfully
 
   # Browserless chrome
-  playwright-brwoser:
+  playwright-browser:
     image: browserless/chrome:latest
     ports:
       - "3000:3000"
