@@ -1,9 +1,10 @@
 from playwright.async_api import async_playwright
-
+from playwright_stealth import Stealth
 
 class WebScraper:
     def __init__(self, websocket_endpoint: str):
         self.websocket_endpoint = websocket_endpoint  # Websocket = two-way tunnel to containerized playwright browser
+        self.playwright_context_manager = None
         self.playwright = None
         self.browser = None
         self.context = None
@@ -12,8 +13,8 @@ class WebScraper:
         """
         Method for async with to understand how 
         """
-        # Initialize plawywright
-        self.playwright = await async_playwright().start()
+        self.playwright_context_manager = Stealth().use_async(async_playwright())
+        self.playwright = await self.playwright_context_manager.__aenter__() 
         # Connect to the running containerized playwright service
         self.browser = await self.playwright.chromium.launch(
             headless=True,
@@ -22,11 +23,13 @@ class WebScraper:
                 "--disable-setuid-sandbox", 
                 "--disable-dev-shm-usage"
             ]
-        )        # Set user agent and viewport settings in new context session
+        )        
+        # Set user agent and viewport settings in new context session
         self.context = await self.browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             viewport={"width": 1920, "height": 1080}
         )
+        self.page = await self.context.new_page()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
