@@ -53,7 +53,7 @@ class WebScraper:
 
     async def locate_text(self, page, locator_class: str, locator_desc: str) -> str:
         locator = await page.locator(locator_class)
-        if locator.count() > 0:
+        if await locator.count() > 0:
             text = await locator.first.inner_text()
             print(f"{locator_desc}: {text}")
             return text
@@ -68,7 +68,7 @@ class GlassdoorScraper(WebScraper):
         self.url = "https://www.glassdoor.com/Job/united-states-data-engineer-jobs-SRCH_IL.0,13_IN1_KO14,27.htm?sortBy=date_desc&fromAge=1"
         self.closed_auth_modal = False
 
-    async def scrape_job_listings(self):
+    async def scrape_job_listings(self) -> list[dict]:
         # Launch with context to use specific user agent settings / viewport settings
         # Browser is also heavier / more resource intensive
         page = await self.context.new_page()
@@ -81,7 +81,8 @@ class GlassdoorScraper(WebScraper):
         await self.load_more(page)
         # ul > li tells playwright to navigate to travel to the parent class and then list child classes nested under
         job_cards = page.locator("ul.JobsList_jobsList_lqjTr > li")
-        print(f"Found {job_cards.count()} jobs posted. Scraping job data...")
+        print(f"Found {await job_cards.count()} jobs posted. Scraping job data...")
+        all_job_details = []
         for i in range(await job_cards.count()):
             job_details = {}
             f"Scraping job {i + 1} of {await job_cards.count()}..."
@@ -110,7 +111,8 @@ class GlassdoorScraper(WebScraper):
             salary_locator = page.locator("[data-test='detailSalary]")
             job_details["salary"] = await salary_locator.inner_text()
             print(f"Salary: {job_details['salary']}")
-        return job_details
+            all_job_details.append(job_details)
+        return all_job_details
         
 
     async def get_job_description_details(self, page, job_details: dict) -> dict:
