@@ -1,8 +1,12 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
+from apps.data_source_utils.yahoo_finance_config import DAILY_EXTRACT_CONFIG
 
 class WebScraper:
-    def __init__(self, websocket_endpoint: str):
+    def __init__(self, websocket_endpoint: str = "ws://playwright-browser:3000/"):
         self.websocket_endpoint = websocket_endpoint  # Websocket = two-way tunnel to containerized playwright browser
         self.playwright_context_manager = None
         self.playwright = None
@@ -70,48 +74,35 @@ class YahooFinanceScraper(WebScraper):
         super().__init__(websocket_endpoint)
         self.base_url = "https://finance.yahoo.com/quote"
 
-    async def scrape_job_listings(self) -> list[dict]:
+    async def scrape_company_stock_data(self, company_symbol: str) -> list[dict]:
         # Launch with context to use specific user agent settings / viewport settings
         # Browser is also heavier / more resource intensive
         page = await self.context.new_page()
         # Proceed once basic HTML loads
+        self.url = f"{self.base_url}/{company_symbol}"
         print(f"Navigating to {self.url}...")
         await page.goto(self.url, wait_until="domcontentloaded", timeout=60000)
-        # Wait for login auth modal pop up. Close if it appears
-        await self.close_auth_modal(page)
-        # While there are more jobs to load, click load more button
-        await self.load_more(page)
-        # ul > li tells playwright to navigate to travel to the parent class and then list child classes nested under
-        job_cards = page.locator("ul.JobsList_jobsList_lqjTr > li")
-        print(f"Found {await job_cards.count()} jobs posted. Scraping job data...")
-        all_job_details = []
-        for i in range(await job_cards.count()):
-            job_details = {}
-            f"Scraping job {i + 1} of {await job_cards.count()}..."
-            card = job_cards.nth(i)
-            # Scroll if job card is below current snapshot of screen
-            await card.scroll_into_view_if_needed()
-            await card.click()
-            await self.close_auth_modal(page)
-            job_details["company_name"] = await self.locate_text(
-                page=page,
-                locator_class="div[class*='EmployerProfile_employerNameHeading']",
-                locator_desc="Company Name"
+        company_stock_data = {}
+        for extract_mappings in DAILY_EXTRACT_CONFIG:
+            # Extract stock data from page
+            data_value = await self.locate_text(
+                page, 
+                extract_mappings["selector_field"]
             )
-            job_details["company_rating"] = await self.locate_text(
-                page=page,
-                locator_class="div[class*='RatingSingleStarContainer'] span",
-                locator_desc="Company Rating"
-            )
-            title_row = page.locator("div[class*='JobDetails_employerAndJobTitle']")
-            job_title = await title_row.locator("h1").inner_text()
-            job_details["job_title"] = job_title
-            print(f"Job title: {job_title}")
-            location_locator = page.locator("[data-test='location]")
-            job_details["location"] = await location_locator.inner_text()
-            print(f"Job location: {job_details['location']}")
-            salary_locator = page.locator("[data-test='detailSalary]")
-            job_details["salary"] = await salary_locator.inner_text()
-            print(f"Salary: {job_details['salary']}")
-            all_job_details.append(job_details)
-        return all_job_details
+            company_stock_data[extract_mappings["target_field"]] = data_value
+        return company_stock_data
+
+    async def scrape_companies_data(self, company_symbols: list[str], parallel_executors: int = 10) -> list[dict]:
+        all_data = []
+        futures = None
+        with ThreadPoolExecutor(max_workers=parallel_executors) as executor:
+            futures = [
+                executor.submit(
+                    await self.scrape_company_stock_data(company_symbol)
+                )
+                for company_symbol in company_symbols
+            ]
+        for future in as_completed(futures):
+            data = future.result()
+            all_data.append(data)
+        return all_data
