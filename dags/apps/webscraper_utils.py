@@ -89,6 +89,7 @@ class YahooFinanceScraper(WebScraper):
                 page, 
                 extract_mappings["selector_field"]
             )
+            print(f"{extract_mappings['target_field']}: {data_value}")
             company_stock_data[extract_mappings["target_field"]] = data_value
         return company_stock_data
 
