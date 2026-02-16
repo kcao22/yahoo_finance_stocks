@@ -8,7 +8,7 @@ class WebScraper:
         self.playwright = None
         self.browser = None
         self.context = None
-        
+
     async def __aenter__(self):
         """
         Method for async with to understand how 
@@ -65,11 +65,10 @@ class WebScraper:
             return "N/A"
 
 
-class GlassdoorScraper(WebScraper):
-    def __init__(self, websocket_endpoint = "ws://playwright-browser:3000/"):
+class YahooFinanceScraper(WebScraper):
+    def __init__(self, websocket_endpoint: str = "ws://playwright-browser:3000/"):
         super().__init__(websocket_endpoint)
-        self.url = "https://www.glassdoor.com/Job/united-states-data-engineer-jobs-SRCH_IL.0,13_IN1_KO14,27.htm?sortBy=date_desc&fromAge=1"
-        self.closed_auth_modal = False
+        self.base_url = "https://finance.yahoo.com/quote"
 
     async def scrape_job_listings(self) -> list[dict]:
         # Launch with context to use specific user agent settings / viewport settings
@@ -116,64 +115,3 @@ class GlassdoorScraper(WebScraper):
             print(f"Salary: {job_details['salary']}")
             all_job_details.append(job_details)
         return all_job_details
-        
-
-    async def get_job_description_details(self, page, job_details: dict) -> dict:
-        # Locate job details box
-        # Partial match on container name
-        job_details_container = page.locator("div[class*='JobDetails_jobDetailsContainer']")
-        # Expand job description
-        self.click_button(
-            page,
-            button_selector="button[data-test='show-more-cta']",
-            selector_desc="show more job description button",
-            state="visible",
-            timeout=2500
-        )
-        # Locate job description box
-        # Similar to job details, partial container name match
-        description_locator = job_details_container.locator("div[class*='JobDetails_jobDescription']")
-        # Await for job description to load
-        await description_locator.wait_for(state="visible", timeout=1500)
-        job_details["description"] = await description_locator.inner_text()
-        print(f"Job description: {job_details['description'][:50]}...")
-        return job_details
-
-
-
-
-        
-    async def close_auth_modal(self, page):
-        """
-        Closes the authentication modal if it appears.
-        """
-        # Set CSS path to modal button
-        auth_modal_button = "button[data-test='auth-modal-close-button']"
-        try:
-            await page.wait_for_selector(auth_modal_button, state="visible", timeout=2500)
-            print(f"Authentication modal detected. Closing...")
-            # Click selector button
-            await page.click(auth_modal_button)
-            self.closed_auth_modal = True
-        except:
-            print(f"No authentication modal detected. Continuing with scraping...")
-            pass
-
-    async def load_more(self, page):
-        """
-        Clicks load more jobs if more job listings are available.
-        """
-        # Set CSS path to load more button
-        # User locator insted of wait for selector to account for page changes after clicking load more button.
-        load_more_button = page.locator("button[data-test='load-more']")
-        while True:
-            try:
-                await load_more_button.wait_for(load_more_button, state="visible", timeout=6000)
-                print(f"Load more button detected. Clicking...")
-                # Click selector button
-                await page.click(load_more_button)
-                await page.wait_for_load_state("networkidle", timeout=5000)
-                await self.close_auth_modal(page)
-            except:
-                print(f"No further load more buttons detected. Continuing with scraping...")
-                break

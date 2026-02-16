@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgbm1 \
     libasound2 \
     libpango-1.0-0 \
-    libcairo2 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libcairo2 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 USER airflow
 
