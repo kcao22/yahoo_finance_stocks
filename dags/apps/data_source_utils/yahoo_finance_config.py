@@ -503,163 +503,14 @@ SP_500_CONFIG = [
 	# {"symbol": "AMTM", "name": "Amentum Holdings, Inc."},
 ]
 
-
-DAILY_EXTRACT_CONFIG = [
-	{
-		"target_field": "previous_close",  # Stock price at end of previous trading session
-		"html_element_tag": "fin-streamer",
-		"identifier_attribute": "data-field",
-		"identifier_value": "regularMarketPreviousClose",
-		"is_data_value": True
-	},
-	{
-		"target_field": "open",  # Stock price at market open for current session
-		"html_element_tag": "fin-streamer",
-		"identifier_attribute": "data-field",
-		"identifier_value": "regularMarketOpen",
-		"is_data_value": True
-	},
-	{
-		"target_field": "bid",  # Highest price a buyer will pay for 1 share (x 100 shares)
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Bid",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "ask",  # Lowest price a seller will sell 1 share (x 100 shares)
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Ask",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "day_range",  # Lowest and highest stock price for today
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Day's Range",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "volume",  # Number of shares traded today
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Volume",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "avg_volume",  # Average daily traded volume over X period
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Avg. Volume",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "intraday_market_cap",  # Total value of all oustanding shares
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Market Cap (intraday)",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "beta",  # Stock volatility metric relative to market (S&P 500). 1 = moves with, < 1 = less volatile, > 1 more volatile
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Beta (5Y Monthly)",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "pe_ratio", # Price to earning ratio. How much investors are willing to pay for $1 of earnings.
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "PE Ratio (TTM)",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "eps",  # Earnings per share. The company's profit per share
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "EPS (TTM)",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "earnings_date",  # The expected date for next earnings report
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Earnings Date",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "forward_dividend_and_yield",  # The projected annual dividend (what a company pays a shareholder) per share and its percentage of the stock price
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Forward Dividend & Yield",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "ex_dividend_date",  # Cutoff date to receive next dividend
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "Ex-Dividend Date",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-	{
-		"target_field": "one_year_target_estimate",  # Estimated average stock price expected in next 12 months
-		"html_element_tag": "span",
-		"text_class_name": "label yf-1jj98ts",
-		"text_class_filter": "1y Target Est",
-		"sibling_html_element_value_tag": "span",
-		"sibling_html_element_value_class": "value yf-1jj98ts",
-		"is_text_value": True,
-		"is_nested_text_value": True
-	},
-]
-
-
 DAILY_EXTRACT_CONFIG = [
     {
         "target_field": "previous_close",  # Stock price at end of previous trading session
-        "selector_field": "[data-test='regularMarketPreviousClose']",
+        "selector_field": "[data-field='regularMarketPreviousClose']",
     },
 	{
 		"target_field": "open",  # Stock price at market open for current session
-		"selector_field": "[data-test='regularMarketOpen']",
+		"selector_field": "[data-field='regularMarketOpen']",
 	},
  	{
 		"target_field": "bid",  # Highest price a buyer will pay for 1 share (x 100 shares)
@@ -671,105 +522,49 @@ DAILY_EXTRACT_CONFIG = [
     },
 	{
 		"target_field": "day_range",  # Lowest and highest stock price for today
-		"selector_field": "[data-test='regularMarketDayRange']",
+		"selector_field": "[data-field='regularMarketDayRange']",
     },
 	{
 		"target_field": "volume",  # Number of shares traded today
-		"selector_field": "[data-test='regularMarketVolume']",
+		"selector_field": "[data-field='regularMarketVolume']",
     },
 	{
 		"target_field": "avg_volume",  # Average daily traded volume over X period
-		"selector_field": "[data-test='averageVolume']",
+		"selector_field": "[data-field='averageVolume']",
     },
 	{
 		"target_field": "intraday_market_cap",  # Total value of all oustanding shares
-		"selector_field": "[data-test='marketCap']",
+		"selector_field": "[data-field='marketCap']",
     },
+	{
+		"target_field": "beta",  # Stock volatility metric relative to market (S&P 500). 1 = moves with, < 1 = less volatile, > 1 more volatile
+		"selector_field": "li:has(span:text('Beta (5Y Monthly)')) span.value",
+	},
+	{
+		"target_field": "pe_ratio", # Price to earning ratio. How much investors are willing to pay for $1 of earnings.
+		"selector_field": "li:has(span:text('PE Ratio (TTM)')) span.value",
+	},
+	{
+		"target_field": "eps",  # Earnings per share. The company's profit per share
+		"selector_field": "li:has(span:text('EPS (TTM)')) span.value",
+	},
+	{
+		"target_field": "earnings_date",  # The expected date for next earnings report
+		"selector_field": "li:has(span:text('Earnings Date (est.)')) span.value",
+	},
+	{
+		"target_field": "forward_dividend_and_yield",  # The projected annual dividend (what a company pays a shareholder) per share and its percentage of the stock price
+		"selector_field": "li:has(span:text('Forward Dividend & Yield')) span.value",
+	},
+	{
+		"target_field": "ex_dividend_date",  # Cutoff date to receive next dividend
+		"selector_field": "li:has(span:text('Ex-Dividend Date')) span.value",
+	},
+	{
+		"target_field": "one_year_target_estimate",  # Estimated average stock price expected in next 12 months
+		"selector_field": "li:has(span:text('1y Target Est')) span.value",
+	},
 ]
-
-
-# 	{
-# 		"target_field": "intraday_market_cap",  # Total value of all oustanding shares
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "Market Cap (intraday)",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "beta",  # Stock volatility metric relative to market (S&P 500). 1 = moves with, < 1 = less volatile, > 1 more volatile
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "Beta (5Y Monthly)",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "pe_ratio", # Price to earning ratio. How much investors are willing to pay for $1 of earnings.
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "PE Ratio (TTM)",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "eps",  # Earnings per share. The company's profit per share
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "EPS (TTM)",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "earnings_date",  # The expected date for next earnings report
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "Earnings Date",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "forward_dividend_and_yield",  # The projected annual dividend (what a company pays a shareholder) per share and its percentage of the stock price
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "Forward Dividend & Yield",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "ex_dividend_date",  # Cutoff date to receive next dividend
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "Ex-Dividend Date",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "one_year_target_estimate",  # Estimated average stock price expected in next 12 months
-# 		"html_element_tag": "span",
-# 		"text_class_name": "label yf-1jj98ts",
-# 		"text_class_filter": "1y Target Est",
-# 		"sibling_html_element_value_tag": "span",
-# 		"sibling_html_element_value_class": "value yf-1jj98ts",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# ]
-
 
 # DIM_DATA_EXTRACT_CONFIG = [
 # 	{
@@ -833,14 +628,14 @@ DAILY_EXTRACT_CONFIG = [
 # 	{
 # 		"target_field": "company_description",
 # 		"html_element_tag": "section",
-# 		"identifier_attribute": "data-testid",
+# 		"identifier_attribute": "data-fieldid",
 # 		"identifier_value": "description",
 # 		"is_data_value": True
 # 	},
 # 	{
 # 		"target_field": "company_corporate_governance_score",
 # 		"html_element_tag": "section",
-# 		"identifier_attribute": "data-testid",
+# 		"identifier_attribute": "data-fieldid",
 # 		"identifier_value": "corporate-governance",
 # 		"is_data_value": True
 # 	}
