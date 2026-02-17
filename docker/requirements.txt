@@ -1,9 +1,9 @@
-google-api-core==2.28.1
-google-auth==2.47.0
-google-cloud-storage==3.7.0
-google-cloud-bigquery-storage==2.36.0
-google-cloud-bigquery==3.39.0
+# https://raw.githubusercontent.com/apache/airflow/constraints-2.11.0/constraints-3.11.txt
+google-api-core==2.24.2
+google-auth==2.40.1
+google-cloud-storage==2.19.0
+google-cloud-bigquery==3.20.1
 pandas==2.1.4
-pandas-gbq==0.33.0
+pandas-gbq==0.29.0
 playwright==1.58.0
 playwright-stealth==2.0.2
