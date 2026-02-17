@@ -93,17 +93,11 @@ class YahooFinanceScraper(WebScraper):
             company_stock_data[extract_mappings["target_field"]] = data_value
         return company_stock_data
 
-    async def scrape_companies_data(self, company_symbols: list[str], parallel_executors: int = 10) -> list[dict]:
-        all_data = []
-        futures = None
-        with ThreadPoolExecutor(max_workers=parallel_executors) as executor:
-            futures = [
-                executor.submit(
-                    await self.scrape_company_stock_data(company_symbol)
-                )
-                for company_symbol in company_symbols
-            ]
-        for future in as_completed(futures):
-            data = future.result()
-            all_data.append(data)
-        return all_data
+    async def scrape_companies_data(self, company_symbols: list[str], max_concurrency: int = 10) -> list[dict]:
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def sem_task(symbol):
+            async with semaphore:
+                return await self.scrape_company_stock_data(symbol)
+        tasks = [sem_task(symbol) for symbol in company_symbols]
+        return await asyncio.gather(*tasks)
