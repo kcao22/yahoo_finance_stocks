@@ -59,7 +59,7 @@ class WebScraper:
             pass
 
     async def locate_text(self, page, locator_class: str, locator_desc: str) -> str:
-        locator = await page.locator(locator_class)
+        locator = page.locator(locator_class)
         if await locator.count() > 0:
             text = await locator.first.inner_text()
             print(f"{locator_desc}: {text}")
@@ -86,8 +86,10 @@ class YahooFinanceScraper(WebScraper):
         for extract_mappings in DAILY_EXTRACT_CONFIG:
             # Extract stock data from page
             data_value = await self.locate_text(
-                page, 
-                extract_mappings["selector_field"]
+                page=page,
+                locator_class=extract_mappings["selector_field"],
+                locator_desc=extract_mappings["locator_desc"]
+                
             )
             print(f"{extract_mappings['target_field']}: {data_value}")
             company_stock_data[extract_mappings["target_field"]] = data_value

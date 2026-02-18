@@ -1,7 +1,7 @@
 import asyncio
 
 import pandas
-from airflow.sdk import dag, task
+from airflow.decorators import dag, task
 
 from apps import af_utils
 from apps.webscraper_utils import YahooFinanceScraper
