@@ -507,7 +507,7 @@ DAILY_EXTRACT_CONFIG = [
     {
         "target_field": "previous_close",  # Stock price at end of previous trading session
         "locator_desc": "Previous Close",
-        "selector_field": "[data-field='regularMarketPreviousClose']",
+        "selector_field": "[data-field='regularMarketPreviousClose']",  # Pass in CSS attribute selector to locate element of interest
     },
     {
         "target_field": "open",  # Stock price at market open for current session

@@ -59,6 +59,13 @@ class WebScraper:
             pass
 
     async def locate_text(self, page, locator_class: str, locator_desc: str) -> str:
+        """
+        Finds element of a page based on CSS selector and returns inner text.
+        :param page: Playwright page object to perform actions on
+        :param locator_class: CSS selector to locate element of interest
+        :param locator_desc: Description of element being located for logging purposes
+        :return: Inner text of located element or "N/A" if element not found
+        """
         locator = page.locator(locator_class)
         if await locator.count() > 0:
             text = await locator.first.inner_text()
@@ -75,6 +82,12 @@ class YahooFinanceScraper(WebScraper):
         self.base_url = "https://finance.yahoo.com/quote"
 
     async def scrape_company_stock_data(self, company_symbol: str) -> list[dict]:
+        """
+        Scrapes a single company's stock data from Yahoo Finance given a company symbol (e.g. AAPL for Apple, MSFT for Microsoft).
+        Iterates over DAILY_EXTRACT_CONFIG to extract relevant stock data points based on provided CSS selectors and returns a dictionary of extracted data.
+        :param company_symbol: Stock ticker symbol for company of interest
+        :return: Dictionary of extracted stock data for given company
+        """
         # Launch with context to use specific user agent settings / viewport settings
         # Browser is also heavier / more resource intensive
         page = await self.context.new_page()
@@ -96,6 +109,12 @@ class YahooFinanceScraper(WebScraper):
         return company_stock_data
 
     async def scrape_companies_data(self, company_symbols: list[str], max_concurrency: int = 10) -> list[dict]:
+        """
+        Scrapes stock data for multiple companies concurrently from Yahoo Finance.
+        :param company_symbols: List of stock ticker symbols for companies of interest
+        :param max_concurrency: Maximum number of concurrent scraping tasks
+        :return: List of dictionaries containing extracted stock data for each company
+        """
         semaphore = asyncio.Semaphore(max_concurrency)
 
         async def sem_task(symbol):
