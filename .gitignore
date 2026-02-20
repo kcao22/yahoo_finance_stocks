@@ -212,3 +212,10 @@ __marimo__/
 # Airflow
 config/
 logs/
+
+# Terraform
+terraform/terraform.tfvars
+terraform/variables.tf
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform.tfstate
