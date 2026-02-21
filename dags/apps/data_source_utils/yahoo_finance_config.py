@@ -581,77 +581,51 @@ DAILY_EXTRACT_CONFIG = [
     },
 ]
 
-# DIM_DATA_EXTRACT_CONFIG = [
-# 	{
-# 		"target_field": "company_name",
-# 		"html_element_tag": "h1",
-# 		"identifier_attribute": "class",
-# 		"identifier_value": "yf-xxbei9",
-# 		"is_data_value": True
-# 	},
-# 	{
-# 		"target_field": "company_address",
-# 		"html_element_tag": "div",
-# 		"identifier_attribute": "class",
-# 		"identifier_value": "address yf-wxp4ja",
-# 		"is_data_value": True
-# 	},
-# 	{
-# 		"target_field": "company_phone_number",
-# 		"html_element_tag": "a",
-# 		"identifier_attribute": "aria-label",
-# 		"identifier_value": "phone number",
-# 		"is_data_value": True
-# 	},
-# 	{
-# 		"target_field": "company_website",
-# 		"html_element_tag": "a",
-# 		"identifier_attribute": "aria-label",
-# 		"identifier_value": "website link",
-# 		"is_data_value": True
-# 	},
-# 	{
-# 		"target_field": "company_sector",
-# 		"html_element_tag": "dt",
-# 		"text_class_name": "yf-wxp4ja",
-# 		"text_class_filter": "Sector:",
-# 		"sibling_html_element_value_tag": "dd",
-# 		"sibling_html_element_value_class": None,
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "company_industry",
-# 		"html_element_tag": "dt",
-# 		"text_class_name": "yf-wxp4ja",
-# 		"text_class_filter": "Industry:",
-# 		"sibling_html_element_value_tag": "a",
-# 		"sibling_html_element_value_class": "subtle-link fin-size-large yf-17w8w6",
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "company_full_time_employees",
-# 		"html_element_tag": "dt",
-# 		"text_class_name": "yf-wxp4ja",
-# 		"text_class_filter": "Full Time Employees:",
-# 		"sibling_html_element_value_tag": "dd",
-# 		"sibling_html_element_value_class": None,
-# 		"is_text_value": True,
-# 		"is_nested_text_value": True
-# 	},
-# 	{
-# 		"target_field": "company_description",
-# 		"html_element_tag": "section",
-# 		"identifier_attribute": "data-fieldid",
-# 		"identifier_value": "description",
-# 		"is_data_value": True
-# 	},
-# 	{
-# 		"target_field": "company_corporate_governance_score",
-# 		"html_element_tag": "section",
-# 		"identifier_attribute": "data-fieldid",
-# 		"identifier_value": "corporate-governance",
-# 		"is_data_value": True
-# 	}
-# ]
+
+DIM_DATA_EXTRACT_CONFIG = [
+    {
+        "target_field": "company_name",
+        "locator_desc": "Company Name",
+        "selector_field": "[data-testid='quote-title']",
+    },
+    {
+        "target_field": "company_address",
+        "locator_desc": "Company Address",
+        "selector_field": "div[class^='address']",
+    },
+    {
+        "target_field": "company_phone_number",
+        "locator_desc": "Company Phone Number",
+        "selector_field": "a[aria-label='phone number']",
+    },
+    {
+        "target_field": "company_website",
+        "locator_desc": "Company Website",
+        "selector_field": "a[aria-label='website link']",
+    },
+    {
+        "target_field": "company_sector",
+        "locator_desc": "Company Sector",
+        "selector_field": "a[href^='/sectors/'] >> nth=0"
+    },
+    {
+        "target_field": "company_industry",
+        "locator_desc": "Company Industry",
+        "selector_field": "a[href^='/sectors/'] >> nth=1"
+    },
+    {
+        "target_field": "company_full_time_employees",
+        "locator_desc": "Company Full Time Employees",
+        "selector_field": "dt:has-text('Full Time Employees') + dd strong"
+    },
+    {
+        "target_field": "company_description",
+        "locator_desc": "Company Description",
+        "selector_field": "[data-testid='description']"
+    },
+    {
+        "target_field": "company_corporate_governance_score",
+        "locator_desc": "Company Corporate Governance Score",
+        "selector_field": "[data-testid='corporate-governance']"
+    }
+]
