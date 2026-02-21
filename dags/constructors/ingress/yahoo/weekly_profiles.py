@@ -17,19 +17,19 @@ from apps.data_source_utils.yahoo_finance_config import SP_500_CONFIG
 def dag():
 
     @task
-    def scrape_daily_stocks():
+    def scrape_weekly_profiles():
         curr_timestamp = af_utils.get_current_timestamp_str()
 
         async def run_scraper():
             async with YahooFinanceScraper() as scraper:
                 company_symbols = [config["symbol"] for config in SP_500_CONFIG]
-                return await scraper.scrape_companies_data(company_symbols=company_symbols, stock_or_profile="stock", max_concurrency=10)
+                return await scraper.scrape_companies_data(company_symbols=company_symbols, stock_or_profile="profile", max_concurrency=10)
 
         all_data = asyncio.run(run_scraper())
         df = pandas.DataFrame(all_data)
-        df.to_csv(f"/tmp/daily_stocks_{curr_timestamp}.csv", index=False)
+        df.to_csv(f"/tmp/weekly_profiles_{curr_timestamp}.csv", index=False)
 
-    scrape_daily_stocks()
+    scrape_weekly_profiles()
 
 
 dag()
