@@ -29,6 +29,7 @@ class WebScraper:
             ]
         )        
         # Set user agent and viewport settings in new context session
+        # Randomize user agent to avoid bot detection
         self.context = await self.browser.new_context(
             user_agent=self._get_random_user_agent(),
             viewport={"width": 1920, "height": 1080}
@@ -101,6 +102,9 @@ class YahooFinanceScraper(WebScraper):
         :param extract_config: The config list of dictionaries outlining target field and corresponding CSS selector for extraction.
         :return: Dictionary of extracted stock data for given company
         """
+        # Adding a random stagger to individual scraping to avoid bot detection during semaphore parallelized calls
+        random_stagger = random.uniform(0.5, 3.0)
+        await asyncio.sleep(random_stagger)
         # Launch with context to use specific user agent settings / viewport settings
         # Browser is also heavier / more resource intensive
         page = await self.context.new_page()
