@@ -1,0 +1,82 @@
+sources:
+  - name: "yahoo"
+    tables:
+      - table_name: "stocks"
+        dataset_type: "ingress"
+        schema:
+          - {name: "company_symbol", type: "STRING"}
+          - {name: "previous_close", type: "STRING"}
+          - {name: "open", type: "STRING"}
+          - {name: "bid", type: "STRING"}
+          - {name: "ask", type: "STRING"}
+          - {name: "day_range", type: "STRING"}
+          - {name: "volume", type: "STRING"}
+          - {name: "avg_volume", type: "STRING"}
+          - {name: "intraday_market_cap", type: "STRING"}
+          - {name: "beta", type: "STRING"}
+          - {name: "pe_ratio", type: "STRING"}
+          - {name: "eps", type: "STRING"}
+          - {name: "earnings_date", type: "STRING"}
+          - {name: "forward_dividend_and_yield", type: "STRING"}
+          - {name: "ex_dividend_date", type: "STRING"}
+          - {name: "one_year_target_estimate", type: "STRING"}
+          - {name: "extract_date", type: "STRING"}
+        partition_field: "extract_date"
+        cluster_fields: ["company_symbol"]
+
+      - table_name: "stocks"
+        dataset_type: "ods"
+        schema:
+          - {name: "company_symbol", type: "STRING", mode: "REQUIRED"}
+          - {name: "previous_close", type: "FLOAT"}
+          - {name: "open", type: "FLOAT"}
+          - {name: "bid", type: "STRING"}
+          - {name: "ask", type: "STRING"}
+          - {name: "day_range", type: "STRING"}
+          - {name: "volume", type: "INT64"}
+          - {name: "avg_volume", type: "INT64"}
+          - {name: "intraday_market_cap", type: "STRING"}
+          - {name: "beta", type: "FLOAT"}
+          - {name: "pe_ratio", type: "FLOAT"}
+          - {name: "eps", type: "FLOAT"}
+          - {name: "earnings_date", type: "STRING"}
+          - {name: "forward_dividend_and_yield", type: "STRING"}
+          - {name: "ex_dividend_date", type: "STRING"}
+          - {name: "one_year_target_estimate", type: "FLOAT"}
+          - {name: "extract_date", type: "DATE", mode: "REQUIRED"}
+        partition_field: "extract_date"
+        cluster_fields: ["company_symbol"]
+
+      - table_name: "profiles"
+        dataset_type: "ingress"
+        schema:
+          - {name: "company_symbol", type: "STRING"}
+          - {name: "company_name", type: "STRING"}
+          - {name: "company_address", type: "STRING"}
+          - {name: "company_phone_number", type: "STRING"}
+          - {name: "company_website", type: "STRING"}
+          - {name: "company_sector", type: "STRING"}
+          - {name: "company_industry", type: "STRING"}
+          - {name: "company_full_time_employees", type: "INT64"}
+          - {name: "company_description", type: "STRING"}
+          - {name: "company_corporate_governance_score", type: "STRING"}
+          - {name: "extract_date", type: "DATE", mode: "REQUIRED"}
+        partition_field: "extract_date"
+        cluster_fields: ["company_symbol"]
+
+      - table_name: "profiles"
+        dataset_type: "ods"
+        schema:
+          - {name: "company_symbol", type: "STRING", mode: "REQUIRED"}
+          - {name: "company_name", type: "STRING"}
+          - {name: "company_address", type: "STRING"}
+          - {name: "company_phone_number", type: "STRING"}
+          - {name: "company_website", type: "STRING"}
+          - {name: "company_sector", type: "STRING"}
+          - {name: "company_industry", type: "STRING"}
+          - {name: "company_full_time_employees", type: "INT64"}
+          - {name: "company_description", type: "STRING"}
+          - {name: "company_corporate_governance_score", type: "STRING"}
+          - {name: "extract_date", type: "DATE", mode: "REQUIRED"}
+        partition_field: "extract_date"
+        cluster_fields: ["company_symbol"]
