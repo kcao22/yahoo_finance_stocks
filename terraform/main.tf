@@ -22,6 +22,7 @@ resource "google_storage_bucket" "ingress" {
   force_destroy = true
   storage_class = "STANDARD"
   public_access_prevention = "enforced"
+  uniform_bucket_level_access = true
 }
 
 # Create GCS archive bucket
@@ -31,6 +32,7 @@ resource "google_storage_bucket" "archive" {
   force_destroy = true
   storage_class = "STANDARD"
   public_access_prevention = "enforced"
+  uniform_bucket_level_access = true
 }
 
 
