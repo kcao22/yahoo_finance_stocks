@@ -61,3 +61,22 @@ resource "google_bigquery_dataset" "ods_datasets" {
   delete_contents_on_destroy  = true
   depends_on                  = [ google_project_service.bigquery_api ]
 }
+
+resource "google_bigquery_dataset" "dbt_intermediate_datasets" {
+
+  dataset_id                  = "dbt_intermediate"
+  description                 = "Schema for holding dbt intermediate models"
+  location                    = var.region
+  delete_contents_on_destroy  = true
+  depends_on                  = [ google_project_service.bigquery_api ]
+}
+
+resource "google_bigquery_dataset" "dbt_mart_datasets" {
+
+  dataset_id                  = "dbt_mart"
+  description                 = "Schema for holding dbt mart models"
+  location                    = var.region
+  delete_contents_on_destroy  = true
+  depends_on                  = [ google_project_service.bigquery_api ]
+}
+
