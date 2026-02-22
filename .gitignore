@@ -210,7 +210,7 @@ __marimo__/
 .vscode/
 
 # Airflow
-config/
+config/airflow.cfg
 logs/
 
 # Terraform
