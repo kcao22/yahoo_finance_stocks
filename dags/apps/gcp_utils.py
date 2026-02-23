@@ -157,7 +157,8 @@ def _build_primary_keys_statement(primary_keys: list[str]) -> str:
     return " AND ".join(lines)
 
 
-def generate_merge_query(dataset_id: str, table_id: str, ods_config: list[dict], primary_keys: list):
+def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
+    _, ods_config = _fetch_ingress_ods_schemas(source_name=dataset_id, table_name=table_id)
     return f"""
     MERGE `ods_{dataset_id}.{table_id}` D
     USING (
