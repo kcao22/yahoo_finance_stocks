@@ -1,5 +1,6 @@
 import asyncio
 import random
+import pendulum
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
@@ -117,7 +118,7 @@ class YahooFinanceScraper(WebScraper):
                 await page.wait_for_selector("a[href*='/sectors/']", timeout=5000)
             except:
                 print(f"Timed out waiting for profile links for {company_symbol}")
-        data = {}
+        data = {"company_symbol": company_symbol}
         for extract_mappings in extract_config:
             # Extract data from page
             data_value = await self.locate_text(
@@ -126,6 +127,7 @@ class YahooFinanceScraper(WebScraper):
                 locator_desc=extract_mappings["locator_desc"]
             )
             data[extract_mappings["target_field"]] = data_value
+        data["extract_date"] = pendulum.now().format('MM-DD-YYYY')
         return data
 
     async def scrape_companies_data(self, company_symbols: list[str], stock_or_profile: str, max_concurrency: int = 10) -> list[dict]:
