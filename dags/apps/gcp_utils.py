@@ -102,7 +102,7 @@ def load_file_to_bigquery(dataset_id: str, table_id: str, source_file_path: str,
     print(f"File {source_file_path} loaded to {dataset_id}.{table_id}.")
 
 
-def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> str:
+def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     with open("config/bq_schemas.yaml", "r") as infile:
         config = yaml.safe_load(infile)
     source_config = None
@@ -123,40 +123,62 @@ def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> str:
     return ingress_config, ods_config
 
 
-def _build_casting_query(ods_config: dict) -> str:
-    query = ""
+def _build_using_statement(ods_config: list[dict]) -> str:
+    lines = []
     for field in ods_config:
-        field_name = field["name"]
-        field_type = field["type"]
-        query += f"D.{field_name} = SAFE_CAST(S.{field_name} AS {field_type}),\n"
-    return query[:-1]
+        name = field["name"]
+        dtype = field["type"]
+        lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
+    return ",\n".join(lines)
 
 
-def _build_set_query(ods_config: dict) -> str:
-    query = ""
-    
-    
+def _build_update_statement(ods_config: list[dict]) -> str:
+    lines = []
+    for field in ods_config:
+        name = field["name"]
+        lines.append(f"D.{name} = S.{name}")
+    return ",\n".join(lines)
 
-            
-    field_names = 
-    query = """
-    MERGE `{dest_dataset}.{dest_table}` D
-    USING `{source_dataset}.{source_table}` S
-    ON D.id = S.id
+
+def _build_insert_statement(ods_config: list[dict]) -> str:
+    names = []
+    values = []
+    for field in ods_config:
+        name = field["name"]
+        names.append(name)
+        values.append(f"S.{name}")
+    cols_str = ", ".join(names)
+    vals_str = ", ".join(values)
+    return f"INSERT ({cols_str}) VALUES ({vals_str})"
+
+
+def _build_primary_keys_statement(primary_keys: list[str]) -> str:
+    lines = [f"D.{primary_key} = S.{primary_key}" for primary_key in primary_keys]
+    return " AND ".join(lines)
+
+
+def generate_merge_query(dataset_id: str, table_id: str, ods_config: list[dict], primary_keys: list):
+    return f"""
+    MERGE `ods_{dataset_id}.{table_id}` D
+    USING (
+        SELECT
+            {_build_using_statement(ods_config)}
+        FROM `ingress_{dataset_id}.{table_id}` S
+    ) S
+    ON {_build_primary_keys_statement(primary_keys)}
     WHEN MATCHED THEN
         UPDATE SET
-            col1 = S.col1,
-            col2 = S.col2
+            {_build_update_statement(ods_config)}
     WHEN NOT MATCHED THEN
-        INSERT (col1, col2) VALUES (S.col1, S.col2)
+        {_build_insert_statement(ods_config)}
     """
-    return query.format(source_dataset=source_dataset, source_table=source_table, dest_dataset=dest_dataset, dest_table=dest_table)
 
 
 def query_bigquery(query: str):
     client = _create_client(service="bq")
     query_job = client.query(query)
     return query_job.result()
+
 
 def write_to_bigquery(dataset_id: str, table_id: str, dataframe):
     client = _create_client(service="bq")
