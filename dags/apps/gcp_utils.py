@@ -1,3 +1,4 @@
+import os
 import yaml
 
 from google.cloud import bigquery, storage
@@ -149,16 +150,37 @@ def load_local_file_to_bigquery(dataset_id: str, table_id: str, source_file_path
     print(f"File {source_file_path} loaded to {dataset_id}.{table_id}.")
 
 
-def load_gcs_file_to_bigquery(blob_uri: str, dataset_id: str, table_id: str):
+def load_gcs_file_to_bigquery(dataset_id: str, table_id: str, blob_uri: str, operation: str, schema: list, rows_to_skip: int = 1):
     """
     Downloads an object from GCS and writes file to a BigQuery table.
     :param blob_uri: The URI of the object in the GCS bucket.
     dataset_id: Target BigQuery dataset.
     table_id: Target BigQuery table.
     """
-    download_from_gcs(
-        bucket_name=
+    client = _create_client(service="bq")
+    dataset_ref = client.dataset(dataset_id)
+    table_ref = dataset_ref.table(table_id)
+    source_format = None
+    file_type = os.path.splitext(os.path.basename(blob_uri))[1]
+    if file_type == "csv":
+        source_format = bigquery.SourceFormat.CSV
+    else:
+        raise ValueError(f"Format {file_type} support not yet implemented.")
+    job_config = bigquery.LoadJobConfig(
+        schema=schema,
+        source_format=source_format,
+        skip_leading_rows=rows_to_skip,
+        autodetect=False,
+        write_disposition=operation
     )
+    load_job = client.load_table_from_uri(
+        blob_uri,
+        table_id,
+        job_config=job_config
+    )
+    load_job.result()
+    print(f"File {blob_uri} loaded to {dataset_id}.{table_id}.")
+
 
 def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     """Fetch ingress and ODS schemas for a given source/table from YAML.
@@ -274,19 +296,39 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
         {_build_insert_statement(ods_config)}
     """
 
+def generate_select_from_ingress_query(dataset_id: str, table_id: str):
+    _, ods_config = _fetch_ingress_ods_schemas(source_name=dataset_id, table_name=table_id)
+    return f"""
+    SELECT
+    {_build_using_statement(ods_config)}
+    FROM `ingress_{dataset_id}.{table_id}` S
+    """
+    
 
-def query_bigquery(query: str):
+def execute_bq_query(query: str, dataset_id: str = None, table_id: str = None, write_disposition: str = None):
     """Execute a SQL query against BigQuery and return the result iterator.
 
     :param query: SQL query string to execute.
     :return: The BigQuery query result iterator (rows can be iterated over).
     """
+    job_config = None
+    destination_table = ""
+    if dataset_id and table_id:
+        if not write_disposition:
+            raise ValueError("Please provide a write disposition for query.")
+        destination_table = f"`{dataset_id}.{table_id}`"
+    elif (dataset_id and not table_id) or (table_id and not dataset_id):
+        raise ValueError("Please provide dataset and table if job config is needed.")
+    job_config = bigquery.QueryJobConfig(
+        destination=destination_table,
+        write_disposition=write_disposition
+    )
     client = _create_client(service="bq")
-    query_job = client.query(query)
+    query_job = client.query(query, job_config=job_config)
     return query_job.result()
 
 
-def write_to_bigquery(dataset_id: str, table_id: str, dataframe):
+def write_df_to_bigquery(dataset_id: str, table_id: str, dataframe):
     """Load a pandas DataFrame into a BigQuery table.
 
     :param dataset_id: Target BigQuery dataset.

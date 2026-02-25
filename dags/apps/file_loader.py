@@ -8,9 +8,20 @@ from apps import gcp_utils
 
 
 class BigQueryFileLoader:
-    def __init__(self, schema: str, table: str):
-        self.schema = schema
-        self.table = table
+    def __init__(self, table_dataset_id: str, table_id: str, operation: str):
+        self.table_dataset_id = table_dataset_id
+        self.table_id = table_id
+        self.operation = operation
+
+    def serialize(self):
+        return self.__dict__
+
+    def deserialize(self, data):
+        self.__dict__.update(data)
+
+    def build_dag(self):
+
+
 
 
 
@@ -28,9 +39,41 @@ def get_most_recent_ingress_file(prefix: str):
 
 
 @task
-def load_ingress_file_to_ingress_table(schema: str, table: str):
-    gcp_utils.load_file_to_bigquery(
-        dataset_id=schema,
-        table_id=table,
-        source_file_path=
+def load_ingress_file_to_ingress_table(table_schema: str, dataset_id: str, table_id: str, blob_uri: str, write_operation: str, rows_to_skip: int):
+    gcp_utils.load_gcs_file_to_bigquery(
+        dataset_id=dataset_id,
+        table_id=table_id,
+        blob_uri=blob_uri,
+        operation=write_operation,
+        schema=table_schema,
+        rows_to_skip=rows_to_skip
     )
+
+
+@task
+def write_ingress_to_ods(target_dataset_id: str, target_table_id: str, primary_keys: list[str], operation: str):
+    query = ""
+    write_disposition = None
+    if operation == "merge":
+        query = gcp_utils.generate_merge_query(
+            dataset_id=target_dataset_id,
+            table_id=target_table_id,
+            primary_keys=primary_keys
+        )
+    elif operation == "append":
+        query = gcp_utils.generate_select_from_ingress_query(
+            dataset_id=target_dataset_id,
+            table_id=target_table_id
+        )
+        write_disposition = "WRITE_APPEND"
+    elif operation == "replace":
+        query = gcp_utils.generate_select_from_ingress_query(
+            dataset_id=target_dataset_id,
+            table_id=target_table_id   
+        )
+        write_disposition = "WRITE_TRUNCATE"
+    gcp_utils.execute_bq_query(
+        query=query,
+        write_disposition=write_disposition
+    )
+
