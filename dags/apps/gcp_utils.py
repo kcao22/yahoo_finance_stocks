@@ -5,9 +5,15 @@ from airflow.models import Variable
 
 
 def _create_client(service: str) -> set:
-    """
-    Instantiates GCP client based on service. Note json credentials have been configured as a part of local
-    gcloud setup and subsequent mounting of file to airflow via docker volumes.
+    """Instantiate a Google Cloud client for the requested service.
+
+    :param service: Short name of the service to instantiate. Supported
+        values are ``"bq"`` for BigQuery and ``"gcs"`` for Cloud Storage.
+    :return: A service client instance (BigQuery or Storage client).
+    :raises ValueError: If an unsupported service name is provided.
+    Note:
+        JSON credentials are expected to be configured for the environment
+        (e.g. via gcloud and mounted to Airflow containers).
     """
     if service == "bq":
         return bigquery.Client(project=Variable.get("gcp_project_id"))
@@ -18,6 +24,11 @@ def _create_client(service: str) -> set:
 
 
 def list_bigquery_datasets():
+    """List dataset IDs in the configured BigQuery project.
+
+    :return: A set of dataset IDs (strings). If no datasets found, returns an
+        empty set.
+    """
     client = _create_client(service="bq")
     print("Fetching datasets...")
     datasets = client.list_datasets()
@@ -30,6 +41,11 @@ def list_bigquery_datasets():
 
 
 def list_bigquery_tables(dataset_id: str) -> set:
+    """List table IDs for a given BigQuery dataset.
+
+    :param dataset_id: The dataset identifier to list tables from.
+    :return: A set of table IDs (strings). If no tables found, returns an empty set.
+    """
     client = _create_client(service="bq")
     print(f"Fetching tables for dataset: {dataset_id}...")
     tables = client.list_tables(dataset_id)
@@ -42,6 +58,11 @@ def list_bigquery_tables(dataset_id: str) -> set:
 
 
 def list_bigquery_schemas(dataset_id: str) -> set:
+    """Print schema information for all tables in a dataset.
+
+    :param dataset_id: The dataset identifier to inspect.
+    :return: None. Schema information is printed to stdout.
+    """
     client = _create_client(service="bq")
     tables = list_bigquery_tables(dataset_id)
     for table in tables:
@@ -53,6 +74,14 @@ def list_bigquery_schemas(dataset_id: str) -> set:
 
 
 def create_bigquery_table(dataset_id: str, table_id: str, schema: list):
+    """Create a BigQuery table with the provided schema.
+
+    :param dataset_id: The dataset in which to create the table.
+    :param table_id: The name of the table to create.
+    :param schema: A list of BigQuery schema field definitions (e.g. instances
+        of ``bigquery.SchemaField``) describing the table columns.
+    :return: The created BigQuery table object.
+    """
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
@@ -62,6 +91,12 @@ def create_bigquery_table(dataset_id: str, table_id: str, schema: list):
 
 
 def delete_bigquery_table(dataset_id: str, table_id: str):
+    """Delete a BigQuery table if it exists.
+
+    :param dataset_id: Dataset containing the table to delete.
+    :param table_id: Table identifier to delete.
+    :return: None. Prints a confirmation message on success.
+    """
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
@@ -73,7 +108,19 @@ def delete_bigquery_table(dataset_id: str, table_id: str):
     print(f"Table {dataset_id}.{table_id} deleted.")
 
 
-def load_file_to_bigquery(dataset_id: str, table_id: str, source_file_path: str, source_file_type: str, operation: str, schema: list, rows_to_skip: int = 1):
+def load_local_file_to_bigquery(dataset_id: str, table_id: str, source_file_path: str, source_file_type: str, operation: str, schema: list, rows_to_skip: int = 1):
+    """Load a local file into a BigQuery table.
+
+    :param dataset_id: Target BigQuery dataset.
+    :param table_id: Target BigQuery table.
+    :param source_file_path: Local path to the source file to load.
+    :param source_file_type: File format (currently supports ``"csv"``).
+    :param operation: Write disposition; either ``"append"`` or ``"overwrite"``.
+    :param schema: List of BigQuery schema fields (used when autodetect is False).
+    :param rows_to_skip: Number of header rows to skip (default: 1).
+    :return: None. Waits for the load job to complete and prints a confirmation.
+    :raises ValueError: If an unsupported file type or operation is provided.
+    """
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
@@ -102,7 +149,27 @@ def load_file_to_bigquery(dataset_id: str, table_id: str, source_file_path: str,
     print(f"File {source_file_path} loaded to {dataset_id}.{table_id}.")
 
 
+def load_gcs_file_to_bigquery(blob_uri: str, dataset_id: str, table_id: str):
+    """
+    Downloads an object from GCS and writes file to a BigQuery table.
+    :param blob_uri: The URI of the object in the GCS bucket.
+    dataset_id: Target BigQuery dataset.
+    table_id: Target BigQuery table.
+    """
+    download_from_gcs(
+        bucket_name=
+    )
+
 def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
+    """Fetch ingress and ODS schemas for a given source/table from YAML.
+
+    :param source_name: The logical source (usually the dataset id) to look up
+        in the ``config/bq_schemas.yaml`` file.
+    :param table_name: The table name to find within the source's table list.
+    :return: A tuple of (ingress_schema, ods_schema) where each element is the
+        schema structure loaded from YAML (or ``None`` if not present).
+    :raises ValueError: If the source is not found in the configuration file.
+    """
     with open("config/bq_schemas.yaml", "r") as infile:
         config = yaml.safe_load(infile)
     source_config = None
@@ -124,6 +191,13 @@ def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
 
 
 def _build_using_statement(ods_config: list[dict]) -> str:
+    """Build the SELECT list used in a MERGE USING clause.
+
+    :param ods_config: List of field definitions (each a dict containing at
+        least ``name`` and ``type`` keys).
+    :return: A string containing comma-separated SAFE_CAST expressions for use
+        in the USING subquery.
+    """
     lines = []
     for field in ods_config:
         name = field["name"]
@@ -133,6 +207,12 @@ def _build_using_statement(ods_config: list[dict]) -> str:
 
 
 def _build_update_statement(ods_config: list[dict]) -> str:
+    """Build the UPDATE SET clause for a MERGE statement.
+
+    :param ods_config: List of field definition dicts containing a ``name`` key.
+    :return: A string containing comma-separated assignment expressions for
+        the UPDATE clause.
+    """
     lines = []
     for field in ods_config:
         name = field["name"]
@@ -141,6 +221,12 @@ def _build_update_statement(ods_config: list[dict]) -> str:
 
 
 def _build_insert_statement(ods_config: list[dict]) -> str:
+    """Build the INSERT clause for a MERGE statement.
+
+    :param ods_config: List of field definition dicts containing a ``name`` key.
+    :return: A string representing an INSERT statement fragment with the
+        column list and corresponding S.* values.
+    """
     names = []
     values = []
     for field in ods_config:
@@ -153,11 +239,25 @@ def _build_insert_statement(ods_config: list[dict]) -> str:
 
 
 def _build_primary_keys_statement(primary_keys: list[str]) -> str:
+    """Build the equality condition for primary keys used in MERGE ON.
+
+    :param primary_keys: List of primary key column names.
+    :return: A string joining equality comparisons with ``AND`` for the MERGE
+        ON clause.
+    """
     lines = [f"D.{primary_key} = S.{primary_key}" for primary_key in primary_keys]
     return " AND ".join(lines)
 
 
 def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
+    """Generate a BigQuery MERGE query to merge ingress into ODS.
+
+    :param dataset_id: Logical dataset/source name used in config and table
+        naming (used to build ``ingress_`` and ``ods_`` table identifiers).
+    :param table_id: Table name to merge.
+    :param primary_keys: List of primary key column names used for matching rows.
+    :return: A string containing the MERGE SQL statement.
+    """
     _, ods_config = _fetch_ingress_ods_schemas(source_name=dataset_id, table_name=table_id)
     return f"""
     MERGE `ods_{dataset_id}.{table_id}` D
@@ -176,12 +276,24 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
 
 
 def query_bigquery(query: str):
+    """Execute a SQL query against BigQuery and return the result iterator.
+
+    :param query: SQL query string to execute.
+    :return: The BigQuery query result iterator (rows can be iterated over).
+    """
     client = _create_client(service="bq")
     query_job = client.query(query)
     return query_job.result()
 
 
 def write_to_bigquery(dataset_id: str, table_id: str, dataframe):
+    """Load a pandas DataFrame into a BigQuery table.
+
+    :param dataset_id: Target BigQuery dataset.
+    :param table_id: Target BigQuery table.
+    :param dataframe: A pandas DataFrame to load.
+    :return: None. Waits for the load job to finish and prints a confirmation.
+    """
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
@@ -193,13 +305,39 @@ def write_to_bigquery(dataset_id: str, table_id: str, dataframe):
     print(f"Data loaded to {dataset_id}.{table_id}.")
 
 
-def list_gcs_bucket_blobs(bucket_name: str):
+def list_gcs_bucket_blobs(bucket_name: str, prefix: str):
+    """List blobs in a Cloud Storage bucket under a prefix.
+
+    :param bucket_name: Airflow Variable name or actual bucket name to list.
+    :param prefix: Blob prefix to filter results.
+    :return: An iterator of Blob objects from Google Cloud Storage.
+    """
     client = _create_client(service="gcs")
-    blobs = client.list_blobs(Variable.get(bucket_name))
+    blobs = client.list_blobs(Variable.get(bucket_name), prefix=prefix)
     return blobs
 
 
+def list_gcs_bucket_blobs_by_update(bucket_name: str, prefix: str, reverse: bool = True):
+    """Return blobs from a bucket sorted by their update timestamp.
+
+    :param bucket_name: Airflow Variable name or actual bucket name to list.
+    :param prefix: Currently unused; reserved for future filtering by prefix.
+    :param reverse: If True, newest-first; otherwise oldest-first.
+    :return: A list of Blob objects sorted by their ``updated`` attribute.
+    """
+    client = _create_client(service="gcs")
+    blobs = client.list_blobs(Variable.get(bucket_name), prefix=prefix)
+    return [blob for blob in blobs].sort(lambda x: x.update, reverse=reverse)
+
+
 def upload_to_gcs(bucket_name: str, source_file_path: str, destination_blob_name: str):
+    """Upload a local file to a Google Cloud Storage bucket.
+
+    :param bucket_name: Name of the destination GCS bucket.
+    :param source_file_path: Local file path to upload.
+    :param destination_blob_name: Destination path/name in the bucket.
+    :return: None. Prints a confirmation on success.
+    """
     client = _create_client(service="gcs")
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
@@ -208,6 +346,12 @@ def upload_to_gcs(bucket_name: str, source_file_path: str, destination_blob_name
 
 
 def delete_gcs_blob(bucket_name: str, blob_name: str):
+    """Delete a blob from a GCS bucket.
+
+    :param bucket_name: Name of the bucket containing the blob.
+    :param blob_name: Name/path of the blob to delete.
+    :return: None. Prints a confirmation on success.
+    """
     client = _create_client(service="gcs")
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -216,6 +360,13 @@ def delete_gcs_blob(bucket_name: str, blob_name: str):
 
 
 def download_from_gcs(bucket_name: str, blob_name: str, destination_file_path: str):
+    """Download a blob from GCS to a local path.
+
+    :param bucket_name: Name of the source GCS bucket.
+    :param blob_name: Name/path of the blob to download.
+    :param destination_file_path: Local destination file path.
+    :return: None. Prints a confirmation on success.
+    """
     client = _create_client(service="gcs")
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -224,6 +375,14 @@ def download_from_gcs(bucket_name: str, blob_name: str, destination_file_path: s
 
 
 def copy_gcs_blob(source_bucket_name: str, source_blob_name: str, destination_bucket_name: str, destination_blob_name: str):
+    """Copy a blob from one GCS bucket to another.
+
+    :param source_bucket_name: Name of the bucket containing the source blob.
+    :param source_blob_name: Name/path of the source blob.
+    :param destination_bucket_name: Name of the target bucket.
+    :param destination_blob_name: Destination name/path in the target bucket.
+    :return: None. Prints a confirmation on success.
+    """
     client = _create_client(service="gcs")
     source_bucket = client.bucket(source_bucket_name)
     source_blob = source_bucket.blob(source_blob_name)
