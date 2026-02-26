@@ -1,8 +1,8 @@
 import os
-import yaml
 
-from google.cloud import bigquery, storage
+import yaml
 from airflow.models import Variable
+from google.cloud import bigquery, storage
 
 
 def _create_client(service: str) -> set:
@@ -101,15 +101,19 @@ def delete_bigquery_table(dataset_id: str, table_id: str):
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
-    client.delete_table(
-        table_ref,
-        delete_contents=True,
-        not_found_ok=True
-    )
+    client.delete_table(table_ref, delete_contents=True, not_found_ok=True)
     print(f"Table {dataset_id}.{table_id} deleted.")
 
 
-def load_local_file_to_bigquery(dataset_id: str, table_id: str, source_file_path: str, source_file_type: str, operation: str, schema: list, rows_to_skip: int = 1):
+def load_local_file_to_bigquery(
+    dataset_id: str,
+    table_id: str,
+    source_file_path: str,
+    source_file_type: str,
+    operation: str,
+    schema: list,
+    rows_to_skip: int = 1,
+):
     """Load a local file into a BigQuery table.
 
     :param dataset_id: Target BigQuery dataset.
@@ -142,15 +146,24 @@ def load_local_file_to_bigquery(dataset_id: str, table_id: str, source_file_path
         source_format=source_format,
         skip_leading_rows=rows_to_skip,
         autodetect=False,
-        write_disposition=operation
+        write_disposition=operation,
     )
     with open(source_file_path, "rb") as source_file:
-        load_job = client.load_table_from_file(source_file, table_ref, job_config=job_config)
+        load_job = client.load_table_from_file(
+            source_file, table_ref, job_config=job_config
+        )
     load_job.result()
     print(f"File {source_file_path} loaded to {dataset_id}.{table_id}.")
 
 
-def load_gcs_file_to_bigquery(dataset_id: str, table_id: str, blob_uri: str, operation: str, schema: list, rows_to_skip: int = 1):
+def load_gcs_file_to_bigquery(
+    dataset_id: str,
+    table_id: str,
+    blob_uri: str,
+    operation: str,
+    schema: list,
+    rows_to_skip: int = 1,
+):
     """
     Downloads an object from GCS and writes file to a BigQuery table.
     :param blob_uri: The URI of the object in the GCS bucket.
@@ -171,18 +184,14 @@ def load_gcs_file_to_bigquery(dataset_id: str, table_id: str, blob_uri: str, ope
         source_format=source_format,
         skip_leading_rows=rows_to_skip,
         autodetect=False,
-        write_disposition=operation
+        write_disposition=operation,
     )
-    load_job = client.load_table_from_uri(
-        blob_uri,
-        table_id,
-        job_config=job_config
-    )
+    load_job = client.load_table_from_uri(blob_uri, table_id, job_config=job_config)
     load_job.result()
     print(f"File {blob_uri} loaded to {dataset_id}.{table_id}.")
 
 
-def _fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
+def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     """Fetch ingress and ODS schemas for a given source/table from YAML.
 
     :param source_name: The logical source (usually the dataset id) to look up
@@ -280,7 +289,9 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
     :param primary_keys: List of primary key column names used for matching rows.
     :return: A string containing the MERGE SQL statement.
     """
-    _, ods_config = _fetch_ingress_ods_schemas(source_name=dataset_id, table_name=table_id)
+    _, ods_config = fetch_ingress_ods_schemas(
+        source_name=dataset_id, table_name=table_id
+    )
     return f"""
     MERGE `ods_{dataset_id}.{table_id}` D
     USING (
@@ -296,16 +307,24 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
         {_build_insert_statement(ods_config)}
     """
 
+
 def generate_select_from_ingress_query(dataset_id: str, table_id: str):
-    _, ods_config = _fetch_ingress_ods_schemas(source_name=dataset_id, table_name=table_id)
+    _, ods_config = fetch_ingress_ods_schemas(
+        source_name=dataset_id, table_name=table_id
+    )
     return f"""
     SELECT
     {_build_using_statement(ods_config)}
     FROM `ingress_{dataset_id}.{table_id}` S
     """
-    
 
-def execute_bq_query(query: str, dataset_id: str = None, table_id: str = None, write_disposition: str = None):
+
+def execute_bq_query(
+    query: str,
+    dataset_id: str = None,
+    table_id: str = None,
+    write_disposition: str = None,
+):
     """Execute a SQL query against BigQuery and return the result iterator.
 
     :param query: SQL query string to execute.
@@ -320,8 +339,7 @@ def execute_bq_query(query: str, dataset_id: str = None, table_id: str = None, w
     elif (dataset_id and not table_id) or (table_id and not dataset_id):
         raise ValueError("Please provide dataset and table if job config is needed.")
     job_config = bigquery.QueryJobConfig(
-        destination=destination_table,
-        write_disposition=write_disposition
+        destination=destination_table, write_disposition=write_disposition
     )
     client = _create_client(service="bq")
     query_job = client.query(query, job_config=job_config)
@@ -342,7 +360,9 @@ def write_df_to_bigquery(dataset_id: str, table_id: str, dataframe):
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND
     )
-    load_job = client.load_table_from_dataframe(dataframe, table_ref, job_config=job_config)
+    load_job = client.load_table_from_dataframe(
+        dataframe, table_ref, job_config=job_config
+    )
     load_job.result()
     print(f"Data loaded to {dataset_id}.{table_id}.")
 
@@ -359,7 +379,9 @@ def list_gcs_bucket_blobs(bucket_name: str, prefix: str):
     return blobs
 
 
-def list_gcs_bucket_blobs_by_update(bucket_name: str, prefix: str, reverse: bool = True):
+def list_gcs_bucket_blobs_by_update(
+    bucket_name: str, prefix: str, reverse: bool = True
+):
     """Return blobs from a bucket sorted by their update timestamp.
 
     :param bucket_name: Airflow Variable name or actual bucket name to list.
@@ -413,10 +435,17 @@ def download_from_gcs(bucket_name: str, blob_name: str, destination_file_path: s
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
     blob.download_to_filename(destination_file_path)
-    print(f"Blob {blob_name} downloaded from bucket {bucket_name} to {destination_file_path}.")
+    print(
+        f"Blob {blob_name} downloaded from bucket {bucket_name} to {destination_file_path}."
+    )
 
 
-def copy_gcs_blob(source_bucket_name: str, source_blob_name: str, destination_bucket_name: str, destination_blob_name: str):
+def copy_gcs_blob(
+    source_bucket_name: str,
+    source_blob_name: str,
+    destination_bucket_name: str,
+    destination_blob_name: str,
+):
     """Copy a blob from one GCS bucket to another.
 
     :param source_bucket_name: Name of the bucket containing the source blob.
@@ -430,4 +459,6 @@ def copy_gcs_blob(source_bucket_name: str, source_blob_name: str, destination_bu
     source_blob = source_bucket.blob(source_blob_name)
     destination_bucket = client.bucket(destination_bucket_name)
     source_bucket.copy_blob(source_blob, destination_bucket, destination_blob_name)
-    print(f"Blob {source_blob_name} copied from bucket {source_bucket_name} to {destination_bucket_name} as {destination_blob_name}.")
+    print(
+        f"Blob {source_blob_name} copied from bucket {source_bucket_name} to {destination_bucket_name} as {destination_blob_name}."
+    )
