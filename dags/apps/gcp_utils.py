@@ -221,11 +221,12 @@ def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     return ingress_config, ods_config
 
 
-def _build_using_statement(ods_config: list[dict]) -> str:
+def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
     """Build the SELECT list used in a MERGE USING clause.
 
     :param ods_config: List of field definitions (each a dict containing at
         least ``name`` and ``type`` keys).
+    :param file_name: String name of the file that the data record is being loaded from.
     :return: A string containing comma-separated SAFE_CAST expressions for use
         in the USING subquery.
     """
@@ -234,6 +235,8 @@ def _build_using_statement(ods_config: list[dict]) -> str:
         name = field["name"]
         dtype = field["type"]
         lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
+    lines.append("CURRENT_TIMESTAMP() AS load_datetime")
+    lines.append(f"{file_name} AS load_filename")
     return ",\n".join(lines)
 
 

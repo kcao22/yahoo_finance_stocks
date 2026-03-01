@@ -127,7 +127,6 @@ class YahooFinanceScraper(WebScraper):
                 locator_desc=extract_mappings["locator_desc"]
             )
             data[extract_mappings["target_field"]] = data_value
-        data["extract_date"] = pendulum.now().format('MM-DD-YYYY')
         return data
 
     async def scrape_companies_data(self, company_symbols: list[str], stock_or_profile: str, max_concurrency: int = 10) -> list[dict]:
