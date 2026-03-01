@@ -34,7 +34,7 @@ def dag():
         gcp_utils.upload_to_gcs(
             bucket_name=Variable.get("ingress_bucket"),
             source_file_path=f"/tmp/daily_stocks_{curr_timestamp}.csv",
-            destination_blob_name="data_sources/yahoo/stocks/daily_stocks_{curr_timestamp}.csv"
+            destination_blob_name=f"data_sources/yahoo/stocks/daily_stocks_{curr_timestamp}.csv"
         )
 
     with TaskGroup("ingest_data") as ingest_data:

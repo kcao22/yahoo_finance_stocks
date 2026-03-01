@@ -161,7 +161,7 @@ def load_local_file_to_bigquery(
         source_format=source_format,
         skip_leading_rows=rows_to_skip,
         autodetect=False,
-        write_disposition=operation,
+        write_disposition=operation if operation != "merge" else None,
     )
     with open(source_file_path, "rb") as source_file:
         load_job = client.load_table_from_file(
@@ -199,7 +199,7 @@ def load_gcs_file_to_bigquery(
         source_format=source_format,
         skip_leading_rows=rows_to_skip,
         autodetect=False,
-        write_disposition=operation,
+        write_disposition=operation if operation != "merge" else None,
     )
     load_job = client.load_table_from_uri(blob_uri, table_ref, job_config=job_config)
     load_job.result()
@@ -425,7 +425,7 @@ def list_gcs_bucket_blobs_by_update(
     :return: A list of Blob objects sorted by their ``updated`` attribute.
     """
     client = _create_client(service="gcs")
-    blobs = client.list_blobs(Variable.get(bucket_name), prefix=prefix)
+    blobs = client.list_blobs(bucket_name, prefix=prefix)
     return sorted([blob for blob in blobs], key=lambda x: x.updated, reverse=reverse)
 
 

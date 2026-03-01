@@ -29,6 +29,7 @@ class BigQueryFileLoader:
         initial_data = self.serialize()
         file_config_dict = fetch_ods_schema(initial_data)
         file_config_dict = get_most_recent_ingress_file(file_config_dict)
+        file_config_dict = archive_most_recent_ingress_file(file_config_dict)
         file_config_dict = load_ingress_file_to_ingress_table(file_config_dict)
         write_ingress_to_ods(file_config_dict)
 
@@ -79,6 +80,7 @@ def archive_most_recent_ingress_file(data: dict):
     )
 
     return file_loader.serialize()
+
 
 @task
 def load_ingress_file_to_ingress_table(data: dict):
