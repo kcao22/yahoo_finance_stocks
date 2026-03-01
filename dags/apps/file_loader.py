@@ -26,10 +26,11 @@ class BigQueryFileLoader:
         self.__dict__.update(data)
 
     def build_dag(self):
-        file_config = fetch_ods_schema(self.serialize())
-        file_config = get_most_recent_ingress_file(file_config.serialize())
-        file_config = load_ingress_file_to_ingress_table(file_config.serialize())
-        file_config = write_ingress_to_ods(file_config.serialize())
+        initial_data = self.serialize()
+        file_config_dict = fetch_ods_schema(initial_data)
+        file_config_dict = get_most_recent_ingress_file(file_config_dict)
+        file_config_dict = load_ingress_file_to_ingress_table(file_config_dict)
+        write_ingress_to_ods(file_config_dict)
 
 
 @task
@@ -86,9 +87,9 @@ def load_ingress_file_to_ingress_table(data: dict):
     file_loader.deserialize(data)
 
     gcp_utils.load_gcs_file_to_bigquery(
-        dataset_id=f"ingress_{file_loader.dataset_id}",
+        dataset_id=f"ingress_{file_loader.table_dataset_id}",
         table_id=file_loader.table_id,
-        blob_uri=file_loader.blob_uri,
+        blob_uri=file_loader.most_recent_blob_uri,
         operation=file_loader.operation,
         schema=file_loader.table_schema,
         rows_to_skip=file_loader.rows_to_skip,

@@ -3,6 +3,7 @@ import asyncio
 import pandas
 from airflow.decorators import dag, task
 from airflow.models import Variable
+from airflow.utils.task_group import TaskGroup
 
 from apps import af_utils, gcp_utils
 from apps.file_loader import BigQueryFileLoader
@@ -33,11 +34,10 @@ def dag():
         gcp_utils.upload_to_gcs(
             bucket_name=Variable.get("ingress_bucket"),
             source_file_path=f"/tmp/daily_stocks_{curr_timestamp}.csv",
-            destination_blob_name=f"data_sources/yahoo/"
+            destination_blob_name="data_sources/yahoo/stocks/daily_stocks_{curr_timestamp}.csv"
         )
 
-    @task
-    def load_to_bq():
+    with TaskGroup("ingest_data") as ingest_data:
         file_loader = BigQueryFileLoader()
         file_loader.set_parameters(
             table_dataset_id="yahoo",
@@ -48,7 +48,7 @@ def dag():
         )
         file_loader.build_dag()
 
-    scrape_daily_stocks() >> load_to_bq()
+    scrape_daily_stocks() >> ingest_data
 
 
 dag()
