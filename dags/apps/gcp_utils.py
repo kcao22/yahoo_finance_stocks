@@ -49,13 +49,13 @@ def list_bigquery_tables(dataset_id: str) -> set:
     """
     client = _create_client(service="bq")
     print(f"Fetching tables for dataset: {dataset_id}...")
-    tables = client.list_tables(dataset_id)
+    tables = list(client.list_tables(dataset_id))
     for table in tables:
         print(f"Table ID: {table.table_id}")
     if not tables:
         print("No tables found.")
         return set()
-    return set(table.table_id for table in tables)
+    return {table.table_id for table in tables}
 
 
 def list_bigquery_schemas(dataset_id: str) -> set:
@@ -74,21 +74,36 @@ def list_bigquery_schemas(dataset_id: str) -> set:
             print(f"\tColumn: {field.name}\tType: ({field.field_type})")
 
 
-def create_bigquery_table(dataset_id: str, table_id: str, schema: list):
+def create_bigquery_table(
+    dataset_id: str,
+    table_id: str,
+    schema: list,
+    partition_field: str,
+    clustering_fields: list,
+):
     """Create a BigQuery table with the provided schema.
 
     :param dataset_id: The dataset in which to create the table.
     :param table_id: The name of the table to create.
     :param schema: A list of BigQuery schema field definitions (e.g. instances
         of ``bigquery.SchemaField``) describing the table columns.
+    :param partition_field: The name of the partition field.
+    :param clustering_fields: A list of the names of the fields used for clustering.
     :return: The created BigQuery table object.
     """
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
     table = bigquery.Table(table_ref, schema=schema)
+    if partition_field:
+        table.time_partitioning = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY, field=partition_field
+        )
+    if clustering_fields:
+        table.clustering_fields = clustering_fields
     table = client.create_table(table)
     print(f"Table {table.dataset_id}.{table.table_id} created.")
+    return table
 
 
 def delete_bigquery_table(dataset_id: str, table_id: str):
@@ -195,13 +210,13 @@ def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     """Fetch ingress and ODS schemas for a given source/table from YAML.
 
     :param source_name: The logical source (usually the dataset id) to look up
-        in the ``config/bq_schemas.yaml`` file.
+        in the ``/opt/airflow/config/bq_schemas.yaml`` file.
     :param table_name: The table name to find within the source's table list.
     :return: A tuple of (ingress_schema, ods_schema) where each element is the
         schema structure loaded from YAML (or ``None`` if not present).
     :raises ValueError: If the source is not found in the configuration file.
     """
-    with open("config/bq_schemas.yaml", "r") as infile:
+    with open("/opt/airflow/config/bq_schemas.yaml", "r") as infile:
         config = yaml.safe_load(infile)
     source_config = None
     ingress_config = None
@@ -219,6 +234,19 @@ def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
             elif table["dataset_type"] == "ods":
                 ods_config = table["schema"]
     return ingress_config, ods_config
+
+
+def parse_bq_schema(schema_config: dict):
+    bq_schema = []
+    for field in schema_config:
+        bq_schema.append(
+            bigquery.SchemaField(
+                name=field["name"],
+                field_type=field["type"],
+                mode=field.get("mode", "NULLABLE"),
+            )
+        )
+    return bq_schema
 
 
 def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
