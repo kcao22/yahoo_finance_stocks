@@ -2,8 +2,10 @@ import asyncio
 
 import pandas
 from airflow.decorators import dag, task
+from airflow.models import Variable
 
-from apps import af_utils
+from apps import af_utils, gcp_utils
+from apps.file_loader import BigQueryFileLoader
 from apps.webscraper_utils import YahooFinanceScraper
 from apps.data_source_utils.yahoo_finance_config import SP_500_CONFIG
 
@@ -28,8 +30,25 @@ def dag():
         all_data = asyncio.run(run_scraper())
         df = pandas.DataFrame(all_data)
         df.to_csv(f"/tmp/daily_stocks_{curr_timestamp}.csv", index=False)
+        gcp_utils.upload_to_gcs(
+            bucket_name=Variable.get("ingress_bucket"),
+            source_file_path=f"/tmp/daily_stocks_{curr_timestamp}.csv",
+            destination_blob_name=f"data_sources/yahoo/"
+        )
 
-    scrape_daily_stocks()
+    @task
+    def load_to_bq():
+        file_loader = BigQueryFileLoader()
+        file_loader.set_parameters(
+            table_dataset_id="yahoo",
+            table_id="stocks",
+            operation="merge",
+            primary_keys=["company_symbol", "load_datetime"],
+            rows_to_skip=1
+        )
+        file_loader.build_dag()
+
+    scrape_daily_stocks() >> load_to_bq()
 
 
 dag()

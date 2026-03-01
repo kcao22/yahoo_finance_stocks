@@ -190,7 +190,7 @@ def load_gcs_file_to_bigquery(
     table_ref = dataset_ref.table(table_id)
     source_format = None
     file_type = os.path.splitext(os.path.basename(blob_uri))[1]
-    if file_type == "csv":
+    if file_type == ".csv":
         source_format = bigquery.SourceFormat.CSV
     else:
         raise ValueError(f"Format {file_type} support not yet implemented.")
@@ -201,7 +201,7 @@ def load_gcs_file_to_bigquery(
         autodetect=False,
         write_disposition=operation,
     )
-    load_job = client.load_table_from_uri(blob_uri, table_id, job_config=job_config)
+    load_job = client.load_table_from_uri(blob_uri, table_ref, job_config=job_config)
     load_job.result()
     print(f"File {blob_uri} loaded to {dataset_id}.{table_id}.")
 
@@ -222,7 +222,7 @@ def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     ingress_config = None
     ods_config = None
     for source in config["sources"]:
-        if source == source_name:
+        if source.get("name") == source_name:
             source_config = source
             break
     if not source_config:
@@ -263,8 +263,8 @@ def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
         name = field["name"]
         dtype = field["type"]
         lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
-    lines.append("CURRENT_TIMESTAMP() AS load_datetime")
-    lines.append(f"{file_name} AS load_filename")
+    lines.append("CURRENT_DATE() AS load_datetime")
+    lines.append(f"'{file_name}' AS load_filename")
     return ",\n".join(lines)
 
 
@@ -279,6 +279,8 @@ def _build_update_statement(ods_config: list[dict]) -> str:
     for field in ods_config:
         name = field["name"]
         lines.append(f"D.{name} = S.{name}")
+    lines.append("D.load_datetime = S.load_datetime")
+    lines.append("D.load_filename = S.load_filename")
     return ",\n".join(lines)
 
 
@@ -295,6 +297,8 @@ def _build_insert_statement(ods_config: list[dict]) -> str:
         name = field["name"]
         names.append(name)
         values.append(f"S.{name}")
+    names += ["load_datetime", "load_filename"]
+    values += ["S.load_datetime", "S.load_filename"]
     cols_str = ", ".join(names)
     vals_str = ", ".join(values)
     return f"INSERT ({cols_str}) VALUES ({vals_str})"
@@ -311,13 +315,14 @@ def _build_primary_keys_statement(primary_keys: list[str]) -> str:
     return " AND ".join(lines)
 
 
-def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
+def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list, file_name: str):
     """Generate a BigQuery MERGE query to merge ingress into ODS.
 
     :param dataset_id: Logical dataset/source name used in config and table
         naming (used to build ``ingress_`` and ``ods_`` table identifiers).
     :param table_id: Table name to merge.
     :param primary_keys: List of primary key column names used for matching rows.
+    :param file_name: The name of the file to load as metadata.
     :return: A string containing the MERGE SQL statement.
     """
     _, ods_config = fetch_ingress_ods_schemas(
@@ -327,7 +332,7 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
     MERGE `ods_{dataset_id}.{table_id}` D
     USING (
         SELECT
-            {_build_using_statement(ods_config)}
+            {_build_using_statement(ods_config, file_name)}
         FROM `ingress_{dataset_id}.{table_id}` S
     ) S
     ON {_build_primary_keys_statement(primary_keys)}
@@ -339,13 +344,13 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list):
     """
 
 
-def generate_select_from_ingress_query(dataset_id: str, table_id: str):
+def generate_select_from_ingress_query(dataset_id: str, table_id: str, file_name: str):
     _, ods_config = fetch_ingress_ods_schemas(
         source_name=dataset_id, table_name=table_id
     )
     return f"""
     SELECT
-    {_build_using_statement(ods_config)}
+    {_build_using_statement(ods_config, file_name)}
     FROM `ingress_{dataset_id}.{table_id}` S
     """
 
@@ -361,18 +366,17 @@ def execute_bq_query(
     :param query: SQL query string to execute.
     :return: The BigQuery query result iterator (rows can be iterated over).
     """
-    job_config = None
-    destination_table = ""
-    if dataset_id and table_id:
-        if not write_disposition:
-            raise ValueError("Please provide a write disposition for query.")
-        destination_table = f"`{dataset_id}.{table_id}`"
-    elif (dataset_id and not table_id) or (table_id and not dataset_id):
-        raise ValueError("Please provide dataset and table if job config is needed.")
-    job_config = bigquery.QueryJobConfig(
-        destination=destination_table, write_disposition=write_disposition
-    )
     client = _create_client(service="bq")
+    job_config = None
+    dataset_ref = None
+    table_ref = None
+    if dataset_id and table_id and write_disposition:  # supported append / replace write dispositions
+        dataset_ref = client.dataset(dataset_id)
+        table_ref = dataset_ref.table(table_id)
+        job_config = bigquery.QueryJobConfig(
+            destination=table_ref,
+            write_disposition=write_disposition
+        )
     query_job = client.query(query, job_config=job_config)
     return query_job.result()
 
@@ -422,7 +426,7 @@ def list_gcs_bucket_blobs_by_update(
     """
     client = _create_client(service="gcs")
     blobs = client.list_blobs(Variable.get(bucket_name), prefix=prefix)
-    return [blob for blob in blobs].sort(lambda x: x.update, reverse=reverse)
+    return sorted([blob for blob in blobs], key=lambda x: x.updated, reverse=reverse)
 
 
 def upload_to_gcs(bucket_name: str, source_file_path: str, destination_blob_name: str):
