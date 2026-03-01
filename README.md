@@ -1,7 +1,7 @@
-# de_glassdoor_jobs_pipeline
-
-# Initial Flow Idea
-
-- (All orchestrated and run via Airflow) - Glassdoor webscraping with playwright -> load to gcp gcs, bigquery -> run dbt in Airflow workers using Cosmos + startup shell scripts in venv -> set up dashboards in Looker Studio
-- Set up GCP services via Terraform
-- Airflow runs via Docker containers. No local set up. Just one instance that writes to GCP.
+- create the tables for daily and weekly scrapes with metadata fields
+- implement file loader for daily and weekly scrapes
+- add time of load and file name of load to metadata fields for daily and weekly scrapes
+- set scrape schedule to 7 pm
+- install astronomer cosmos and get dbt set up for gbq
+- set up intermediate and mart layers and set 
+- set up fast api to retrieve data from db
