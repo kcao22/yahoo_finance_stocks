@@ -1,8 +1,10 @@
 import os
-
 import yaml
+
 from airflow.models import Variable
 from google.cloud import bigquery, storage
+
+from apps.print_utils import print_logging_info_decorator
 
 
 def _create_client(service: str) -> set:
@@ -24,6 +26,7 @@ def _create_client(service: str) -> set:
         raise ValueError(f"Unsupported service: {service}")
 
 
+@print_logging_info_decorator
 def list_bigquery_datasets():
     """List dataset IDs in the configured BigQuery project.
 
@@ -41,6 +44,7 @@ def list_bigquery_datasets():
     return set(dataset.dataset_id for dataset in datasets)
 
 
+@print_logging_info_decorator
 def list_bigquery_tables(dataset_id: str) -> set:
     """List table IDs for a given BigQuery dataset.
 
@@ -58,6 +62,7 @@ def list_bigquery_tables(dataset_id: str) -> set:
     return {table.table_id for table in tables}
 
 
+@print_logging_info_decorator
 def list_bigquery_schemas(dataset_id: str) -> set:
     """Print schema information for all tables in a dataset.
 
@@ -74,6 +79,7 @@ def list_bigquery_schemas(dataset_id: str) -> set:
             print(f"\tColumn: {field.name}\tType: ({field.field_type})")
 
 
+@print_logging_info_decorator
 def create_bigquery_table(
     dataset_id: str,
     table_id: str,
@@ -106,6 +112,7 @@ def create_bigquery_table(
     return table
 
 
+@print_logging_info_decorator
 def delete_bigquery_table(dataset_id: str, table_id: str):
     """Delete a BigQuery table if it exists.
 
@@ -120,6 +127,7 @@ def delete_bigquery_table(dataset_id: str, table_id: str):
     print(f"Table {dataset_id}.{table_id} deleted.")
 
 
+@print_logging_info_decorator
 def load_local_file_to_bigquery(
     dataset_id: str,
     table_id: str,
@@ -171,6 +179,7 @@ def load_local_file_to_bigquery(
     print(f"File {source_file_path} loaded to {dataset_id}.{table_id}.")
 
 
+@print_logging_info_decorator
 def load_gcs_file_to_bigquery(
     dataset_id: str,
     table_id: str,
@@ -206,6 +215,7 @@ def load_gcs_file_to_bigquery(
     print(f"File {blob_uri} loaded to {dataset_id}.{table_id}.")
 
 
+@print_logging_info_decorator
 def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     """Fetch ingress and ODS schemas for a given source/table from YAML.
 
@@ -236,6 +246,7 @@ def fetch_ingress_ods_schemas(source_name: str, table_name: str) -> tuple:
     return ingress_config, ods_config
 
 
+@print_logging_info_decorator
 def parse_bq_schema(schema_config: dict):
     bq_schema = []
     for field in schema_config:
@@ -315,6 +326,7 @@ def _build_primary_keys_statement(primary_keys: list[str]) -> str:
     return " AND ".join(lines)
 
 
+@print_logging_info_decorator
 def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list, file_name: str):
     """Generate a BigQuery MERGE query to merge ingress into ODS.
 
@@ -344,6 +356,7 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list, fil
     """
 
 
+@print_logging_info_decorator
 def generate_select_from_ingress_query(dataset_id: str, table_id: str, file_name: str):
     _, ods_config = fetch_ingress_ods_schemas(
         source_name=dataset_id, table_name=table_id
@@ -355,6 +368,7 @@ def generate_select_from_ingress_query(dataset_id: str, table_id: str, file_name
     """
 
 
+@print_logging_info_decorator
 def execute_bq_query(
     query: str,
     dataset_id: str = None,
@@ -381,6 +395,7 @@ def execute_bq_query(
     return query_job.result()
 
 
+@print_logging_info_decorator
 def write_df_to_bigquery(dataset_id: str, table_id: str, dataframe):
     """Load a pandas DataFrame into a BigQuery table.
 
@@ -402,6 +417,7 @@ def write_df_to_bigquery(dataset_id: str, table_id: str, dataframe):
     print(f"Data loaded to {dataset_id}.{table_id}.")
 
 
+@print_logging_info_decorator
 def list_gcs_bucket_blobs(bucket_name: str, prefix: str):
     """List blobs in a Cloud Storage bucket under a prefix.
 
@@ -414,6 +430,7 @@ def list_gcs_bucket_blobs(bucket_name: str, prefix: str):
     return blobs
 
 
+@print_logging_info_decorator
 def list_gcs_bucket_blobs_by_update(
     bucket_name: str, prefix: str, reverse: bool = True
 ):
@@ -429,6 +446,7 @@ def list_gcs_bucket_blobs_by_update(
     return sorted([blob for blob in blobs], key=lambda x: x.updated, reverse=reverse)
 
 
+@print_logging_info_decorator
 def upload_to_gcs(bucket_name: str, source_file_path: str, destination_blob_name: str):
     """Upload a local file to a Google Cloud Storage bucket.
 
@@ -444,6 +462,7 @@ def upload_to_gcs(bucket_name: str, source_file_path: str, destination_blob_name
     print(f"File {source_file_path} uploaded to {bucket_name}/{destination_blob_name}.")
 
 
+@print_logging_info_decorator
 def delete_gcs_blob(bucket_name: str, blob_name: str):
     """Delete a blob from a GCS bucket.
 
@@ -458,6 +477,7 @@ def delete_gcs_blob(bucket_name: str, blob_name: str):
     print(f"Blob {blob_name} deleted from bucket {bucket_name}.")
 
 
+@print_logging_info_decorator
 def download_from_gcs(bucket_name: str, blob_name: str, destination_file_path: str):
     """Download a blob from GCS to a local path.
 
@@ -475,6 +495,7 @@ def download_from_gcs(bucket_name: str, blob_name: str, destination_file_path: s
     )
 
 
+@print_logging_info_decorator
 def copy_gcs_blob(
     source_bucket_name: str,
     source_blob_name: str,

@@ -27,7 +27,7 @@ class BigQueryFileLoader:
 
     def build_dag(self):
         initial_data = self.serialize()
-        file_config_dict = fetch_ods_schema(initial_data)
+        file_config_dict = fetch_ingress_ods_schema(initial_data)
         file_config_dict = get_most_recent_ingress_file(file_config_dict)
         file_config_dict = archive_most_recent_ingress_file(file_config_dict)
         file_config_dict = load_ingress_file_to_ingress_table(file_config_dict)
@@ -35,11 +35,11 @@ class BigQueryFileLoader:
 
 
 @task
-def fetch_ods_schema(data: dict):
+def fetch_ingress_ods_schema(data: dict):
     file_loader = BigQueryFileLoader()
     file_loader.deserialize(data)
 
-    _, file_loader.table_schema = gcp_utils.fetch_ingress_ods_schemas(
+    file_loader.ingress_schema, file_loader.ods_schema = gcp_utils.fetch_ingress_ods_schemas(
         source_name=file_loader.table_dataset_id, table_name=file_loader.table_id
     )
     return file_loader.serialize()
@@ -93,7 +93,7 @@ def load_ingress_file_to_ingress_table(data: dict):
         table_id=file_loader.table_id,
         blob_uri=file_loader.most_recent_blob_uri,
         operation=file_loader.operation,
-        schema=file_loader.table_schema,
+        schema=file_loader.ingress_schema,
         rows_to_skip=file_loader.rows_to_skip,
     )
     gcp_utils.delete_gcs_blob(

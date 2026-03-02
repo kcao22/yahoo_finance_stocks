@@ -5,6 +5,7 @@ import pendulum
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 from apps.data_source_utils.yahoo_finance_config import DAILY_EXTRACT_CONFIG, DIM_DATA_EXTRACT_CONFIG
+from apps.print_utils import print_logging_info_decorator
 
 class WebScraper:
     def __init__(self, websocket_endpoint: str = "ws://playwright-browser:3000/"):
@@ -58,6 +59,7 @@ class WebScraper:
         ]
         return random.choice(user_agents)
 
+    @print_logging_info_decorator
     async def click_button(self, page, button_selector, selector_desc: str, state: str = "visible", timeout: int = 10000):
         """
         General method for clicking a button and waiting for the resulting page changes to load.
@@ -72,6 +74,7 @@ class WebScraper:
             print(f"No {selector_desc} detected. Continuing with scraping...")
             pass
 
+    @print_logging_info_decorator
     async def locate_text(self, page, locator_class: str, locator_desc: str) -> str:
         """
         Finds element of a page based on CSS selector and returns inner text.
@@ -95,6 +98,7 @@ class YahooFinanceScraper(WebScraper):
         super().__init__(websocket_endpoint)
         self.base_url = "https://finance.yahoo.com/quote"
 
+    @print_logging_info_decorator
     async def scrape_company_data(self, company_symbol: str, extract_config: list[dict]) -> list[dict]:
         """
         Scrapes a single company's stock data from Yahoo Finance given a company symbol (e.g. AAPL for Apple, MSFT for Microsoft).
@@ -129,6 +133,7 @@ class YahooFinanceScraper(WebScraper):
             data[extract_mappings["target_field"]] = data_value
         return data
 
+    @print_logging_info_decorator
     async def scrape_companies_data(self, company_symbols: list[str], stock_or_profile: str, max_concurrency: int = 10) -> list[dict]:
         """
         Scrapes companies data for multiple companies concurrently from Yahoo Finance.
