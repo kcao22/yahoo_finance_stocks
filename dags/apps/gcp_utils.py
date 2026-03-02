@@ -270,12 +270,16 @@ def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
         in the USING subquery.
     """
     lines = []
+    seen_cols = set()
     for field in ods_config:
         name = field["name"]
-        dtype = field["type"]
+        dtype = "FLOAT64" if field["type"].upper() == "FLOAT" else field["type"].upper()
         lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
-    lines.append("CURRENT_DATE() AS load_datetime")
-    lines.append(f"'{file_name}' AS load_filename")
+        seen_cols.add(name)
+    if "load_datetime" not in seen_cols:
+        lines.append("CURRENT_DATE() AS load_datetime")
+    if "load_filename" not in seen_cols:
+        lines.append(f"'{file_name}' AS load_filename")
     return ",\n".join(lines)
 
 
@@ -287,11 +291,15 @@ def _build_update_statement(ods_config: list[dict]) -> str:
         the UPDATE clause.
     """
     lines = []
+    seen_cols = set()
     for field in ods_config:
         name = field["name"]
         lines.append(f"D.{name} = S.{name}")
-    lines.append("D.load_datetime = S.load_datetime")
-    lines.append("D.load_filename = S.load_filename")
+        seen_cols.add(name)
+    if "load_datetime" not in seen_cols:
+        lines.append("D.load_datetime = S.load_datetime")
+    if "load_filename" not in seen_cols:
+        lines.append("D.load_filename = S.load_filename")
     return ",\n".join(lines)
 
 
@@ -310,7 +318,7 @@ def _build_insert_statement(ods_config: list[dict]) -> str:
         values.append(f"S.{name}")
     names += ["load_datetime", "load_filename"]
     values += ["S.load_datetime", "S.load_filename"]
-    cols_str = ", ".join(names)
+    cols_str = ",\n".join(names)
     vals_str = ", ".join(values)
     return f"INSERT ({cols_str}) VALUES ({vals_str})"
 
