@@ -1,6 +1,7 @@
 import asyncio
 
 import pandas
+import pendulum
 from airflow.decorators import dag, task
 from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
@@ -13,6 +14,7 @@ from apps.webscraper_utils import YahooFinanceScraper
 @dag(
     dag_id=af_utils.get_dag_name(__file__),
     default_args=af_utils.get_default_args(),
+    start_date=pendulum.datetime(2026, 3, 2, tz="US/Pacific"),
     schedule_interval="0 19 * * 6",  # Saturday 7 PM
     catchup=False
 )
