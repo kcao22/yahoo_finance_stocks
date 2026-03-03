@@ -49,13 +49,9 @@ class WebScraper:
 
     def _get_random_user_agent(self) -> str:
         user_agents = [
-            # Chrome (Windows)
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            # Firefox (Windows)
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
-            # Edge (Windows)
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0"
         ]
         return random.choice(user_agents)
 
@@ -117,7 +113,7 @@ class YahooFinanceScraper(WebScraper):
                 print(f"(Attempt {attempt + 1}/{max_retries}) for company {company_symbol}...")
                 print(f"Navigating to {extract_url}...")
                 # Proceed once basic HTML loads
-                await page.goto(extract_url, wait_until="domcontentloaded", timeout=60000)
+                await page.goto(extract_url, wait_until="commit", timeout=60000)
                 if extract_url.endswith("/profile"):
                     try:
                         await page.wait_for_selector("a[href*='/sectors/']", timeout=10000)
@@ -132,6 +128,11 @@ class YahooFinanceScraper(WebScraper):
                         locator_desc=extract_mappings["locator_desc"]
                     )
                     data[extract_mappings["target_field"]] = data_value
+                # Retry if crucial daily data is missing
+                missing_fields = [field for field in retry_fields if data.get(field) in [None, "N/A", ""]]
+                if missing_fields and attempt < max_retries - 1:
+                    print(f"Missing crucial fields {missing_fields} for {company_symbol}. Retrying...")
+                    raise ValueError(f"Missing crucial data: {missing_fields}")
                 await page.close()
                 return data
             except Exception as e:
