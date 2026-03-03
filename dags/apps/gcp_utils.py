@@ -270,20 +270,17 @@ def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
         in the USING subquery.
     """
     lines = []
-    seen_cols = set()
     for field in ods_config:
         name = field["name"]
-        dtype = "FLOAT64" if field["type"].upper() == "FLOAT" else field["type"].upper()
-        lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
-        seen_cols.add(name)
-    if "load_datetime" not in seen_cols:
-        lines.append("CURRENT_DATE() AS load_datetime")
-    if "load_filename" not in seen_cols:
-        lines.append(f"'{file_name}' AS load_filename")
+        if name not in {"load_datetime", "load_filename"}:
+            dtype = "FLOAT64" if field["type"].upper() == "FLOAT" else field["type"].upper()
+            lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
+    lines.append("CURRENT_DATE() AS load_datetime")
+    lines.append(f"'{file_name}' AS load_filename")
     return ",\n".join(lines)
 
 
-def _build_update_statement(ods_config: list[dict]) -> str:
+def _build_update_statement(ods_config: list[dict], file_name: str) -> str:
     """Build the UPDATE SET clause for a MERGE statement.
 
     :param ods_config: List of field definition dicts containing a ``name`` key.
@@ -291,19 +288,16 @@ def _build_update_statement(ods_config: list[dict]) -> str:
         the UPDATE clause.
     """
     lines = []
-    seen_cols = set()
     for field in ods_config:
         name = field["name"]
-        lines.append(f"D.{name} = S.{name}")
-        seen_cols.add(name)
-    if "load_datetime" not in seen_cols:
-        lines.append("D.load_datetime = S.load_datetime")
-    if "load_filename" not in seen_cols:
-        lines.append("D.load_filename = S.load_filename")
+        if name not in {"load_datetime", "load_filename"}:
+            lines.append(f"D.{name} = S.{name}")
+    lines.append("D.load_datetime = CURRENT_DATE()")
+    lines.append(f"D.load_filename = '{file_name}'")
     return ",\n".join(lines)
 
 
-def _build_insert_statement(ods_config: list[dict]) -> str:
+def _build_insert_statement(ods_config: list[dict], file_name: str) -> str:
     """Build the INSERT clause for a MERGE statement.
 
     :param ods_config: List of field definition dicts containing a ``name`` key.
@@ -314,10 +308,11 @@ def _build_insert_statement(ods_config: list[dict]) -> str:
     values = []
     for field in ods_config:
         name = field["name"]
-        names.append(name)
-        values.append(f"S.{name}")
+        if name not in {"load_datetime", "load_filename"}:
+            names.append(name)
+            values.append(f"S.{name}")
     names += ["load_datetime", "load_filename"]
-    values += ["S.load_datetime", "S.load_filename"]
+    values += ["CURRENT_DATE()", f"'{file_name}'"]
     cols_str = ",\n".join(names)
     vals_str = ", ".join(values)
     return f"INSERT ({cols_str}) VALUES ({vals_str})"
@@ -358,9 +353,9 @@ def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list, fil
     ON {_build_primary_keys_statement(primary_keys)}
     WHEN MATCHED THEN
         UPDATE SET
-            {_build_update_statement(ods_config)}
+            {_build_update_statement(ods_config, file_name)}
     WHEN NOT MATCHED THEN
-        {_build_insert_statement(ods_config)}
+        {_build_insert_statement(ods_config, file_name)}
     """
 
 
