@@ -40,7 +40,7 @@ sources:
           - {name: "forward_dividend_and_yield", type: "STRING"}
           - {name: "ex_dividend_date", type: "STRING"}
           - {name: "one_year_target_estimate", type: "FLOAT"}
-          - {name: "load_date", type: "TIMESTAMP", mode: "REQUIRED"}
+          - {name: "load_date", type: "DATE", mode: "REQUIRED"}
           - {name: "load_filename", type: "STRING"}
         partition_field: "load_date"
         clustering_fields: ["company_symbol"]
@@ -71,7 +71,7 @@ sources:
           - {name: "company_full_time_employees", type: "INT64"}
           - {name: "company_description", type: "STRING"}
           - {name: "company_corporate_governance_score", type: "STRING"}
-          - {name: "load_date", type: "TIMESTAMP", mode: "REQUIRED"}
+          - {name: "load_date", type: "DATE", mode: "REQUIRED"}
           - {name: "load_filename", type: "STRING"}
         partition_field: "load_date"
         clustering_fields: ["company_symbol"]
