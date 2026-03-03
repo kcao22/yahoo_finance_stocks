@@ -101,6 +101,7 @@ class YahooFinanceScraper(WebScraper):
         :return: Dictionary of extracted stock data for given company
         """
         extract_url = f"{self.base_url}/{company_symbol}" if extract_config == DAILY_EXTRACT_CONFIG else f"{self.base_url}/{company_symbol}/profile"
+        retry_fields = ["open", "previous_close", "bid", "ask", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_full_time_employees"]
         for attempt in range(max_retries):
             page = None
             try:
