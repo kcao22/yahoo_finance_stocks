@@ -2,10 +2,12 @@ import asyncio
 
 import pandas
 from airflow.decorators import dag, task
-
-from apps import af_utils
-from apps.webscraper_utils import YahooFinanceScraper
+from airflow.models import Variable
+from airflow.utils.task_group import TaskGroup
+from apps import af_utils, gcp_utils
 from apps.data_source_utils.yahoo_finance_config import SP_500_CONFIG
+from apps.file_loader import BigQueryFileLoader
+from apps.webscraper_utils import YahooFinanceScraper
 
 
 @dag(
@@ -23,13 +25,33 @@ def dag():
         async def run_scraper():
             async with YahooFinanceScraper() as scraper:
                 company_symbols = [config["symbol"] for config in SP_500_CONFIG]
-                return await scraper.scrape_companies_data(company_symbols=company_symbols, stock_or_profile="profile", max_concurrency=10)
+                return await scraper.scrape_companies_data(
+                    company_symbols=company_symbols,
+                    stock_or_profile="profile",
+                    max_concurrency=10
+                )
 
         all_data = asyncio.run(run_scraper())
         df = pandas.DataFrame(all_data)
         df.to_csv(f"/tmp/weekly_profiles_{curr_timestamp}.csv", index=False)
+        gcp_utils.upload_to_gcs(
+            bucket_name=Variable.get("ingress_bucket"),
+            source_file_path=f"/tmp/weekly_profiles_{curr_timestamp}.csv",
+            destination_blob_name=f"data_sources/yahoo/profiles/weekly_profiles_{curr_timestamp}.csv",
+        )
 
-    scrape_weekly_profiles()
+    with TaskGroup("ingest_data") as ingest_data:
+        file_loader = BigQueryFileLoader()
+        file_loader.set_parameters(
+            table_dataset_id="yahoo",
+            table_id="profiles",
+            operation="merge",
+            primary_keys=["company_symbol", "load_date"],
+            rows_to_skip=1,
+        )
+        file_loader.build_dag()
+
+    scrape_weekly_profiles() >> ingest_data
 
 
 dag()
