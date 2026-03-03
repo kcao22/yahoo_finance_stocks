@@ -99,7 +99,7 @@ class YahooFinanceScraper(WebScraper):
         self.base_url = "https://finance.yahoo.com/quote"
 
     @print_logging_info_decorator
-    async def scrape_company_data(self, company_symbol: str, extract_config: list[dict]) -> list[dict]:
+    async def scrape_company_data(self, company_symbol: str, extract_config: list[dict], max_retries: int = 5) -> list[dict]:
         """
         Scrapes a single company's stock data from Yahoo Finance given a company symbol (e.g. AAPL for Apple, MSFT for Microsoft).
         Iterates over DAILY_EXTRACT_CONFIG to extract relevant stock data points based on provided CSS selectors and returns a dictionary of extracted data.
@@ -107,31 +107,51 @@ class YahooFinanceScraper(WebScraper):
         :param extract_config: The config list of dictionaries outlining target field and corresponding CSS selector for extraction.
         :return: Dictionary of extracted stock data for given company
         """
-        # Adding a random stagger to individual scraping to avoid bot detection during semaphore parallelized calls
-        random_stagger = random.uniform(0.5, 3.0)
-        await asyncio.sleep(random_stagger)
-        # Launch with context to use specific user agent settings / viewport settings
-        # Browser is also heavier / more resource intensive
-        page = await self.context.new_page()
-        # Proceed once basic HTML loads
         extract_url = f"{self.base_url}/{company_symbol}" if extract_config == DAILY_EXTRACT_CONFIG else f"{self.base_url}/{company_symbol}/profile"
-        print(f"Navigating to {extract_url}...")
-        await page.goto(extract_url, wait_until="domcontentloaded", timeout=60000)
-        if extract_url.endswith("/profile"):
+        for attempt in range(max_retries):
+            page = None
             try:
-                await page.wait_for_selector("a[href*='/sectors/']", timeout=5000)
-            except:
-                print(f"Timed out waiting for profile links for {company_symbol}")
-        data = {"company_symbol": company_symbol}
-        for extract_mappings in extract_config:
-            # Extract data from page
-            data_value = await self.locate_text(
-                page=page,
-                locator_class=extract_mappings["selector_field"],
-                locator_desc=extract_mappings["locator_desc"]
-            )
-            data[extract_mappings["target_field"]] = data_value
-        return data
+                # Adding a random stagger to individual scraping to avoid bot detection during semaphore parallelized calls
+                random_stagger = random.uniform(0.5, 3.0)
+                await asyncio.sleep(random_stagger)
+                # Launch with context to use specific user agent settings / viewport settings
+                # Browser is also heavier / more resource intensive
+                page = await self.context.new_page()
+                print(f"(Attempt {attempt + 1}/{max_retries}) for company {company_symbol}...")
+                print(f"Navigating to {extract_url}...")
+                # Proceed once basic HTML loads
+                await page.goto(extract_url, wait_until="domcontentloaded", timeout=60000)
+                if extract_url.endswith("/profile"):
+                    try:
+                        await page.wait_for_selector("a[href*='/sectors/']", timeout=10000)
+                    except Exception as e:
+                        print(f"Time out waiting for profile links for {company_symbol}: {e}. Proceeding anyways.")
+                data = {"company_symbol": company_symbol}
+                for extract_mappings in extract_config:
+                    # Extract data from page
+                    data_value = await self.locate_text(
+                        page=page,
+                        locator_class=extract_mappings["selector_field"],
+                        locator_desc=extract_mappings["locator_desc"]
+                    )
+                    data[extract_mappings["target_field"]] = data_value
+                await page.close()
+                return data
+            except Exception as e:
+                print(f"Error scraping data for {company_symbol} on attempt {attempt + 1}: {e}")
+                if page:
+                    await page.close()
+                if attempt == max_retries - 1:
+                    print(f"Max retries reached for {company_symbol}...")
+                    data = {"company_symbol": company_symbol}
+                    for extract_mappings in extract_config:
+                        data[extract_mappings["target_field"]] = None
+                    print(f"\n{'*' * 100}\n{company_symbol} failed extraction. Please re-run.\n{'*' * 100}")
+                    return data
+
+                else:
+                    print(f"Retrying scrape for {company_symbol}...")
+                    await asyncio.sleep(2 ** attempt + 1 + random.uniform(0, 1))  # Exponential backoff before retrying
 
     @print_logging_info_decorator
     async def scrape_companies_data(self, company_symbols: list[str], stock_or_profile: str, max_concurrency: int = 10) -> list[dict]:
