@@ -61,7 +61,8 @@ class WebScraper:
 
     async def click_button(self, page, button_selector, selector_desc: str, state: str = "visible", timeout: int = 10000):
         """
-        General method for clicking a button and waiting for the resulting page changes to load.
+        General method for clicking a button and waiting for the resulting page changes to load. Originally used this for bypassing pop-ups but new
+        Yahoo data source does not need this. Retaining for future uses.
         """
         # Set CSS path to modal button
         try:
