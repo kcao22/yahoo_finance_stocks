@@ -34,27 +34,28 @@ def dag():
                     )
                     for table_config in tables_to_check:
                         table_id = table_config["table_name"]
-                        if table_id in existing_table_names:
-                            if delete_tables:
-                                gcp_utils.delete_bigquery_table(
-                                    dataset_id=dataset_id,
-                                    table_id=table_config["table_name"],
-                                )
-                            else:
-                                print(
-                                    f"Table {table_config['table_name']} already exists. Skipping create."
-                                )
-                                continue
-                    parsed_schema = gcp_utils.parse_bq_schema(
-                        schema_config=table_config["schema"]
-                    )
-                    gcp_utils.create_bigquery_table(
-                        dataset_id=dataset_id,
-                        table_id=table_config["table_name"],
-                        schema=parsed_schema,
-                        partition_field=table_config.get("partition_field"),
-                        clustering_fields=table_config.get("clustering_fields"),
-                    )
+                        table_exists = table_id in existing_table_names
+                        if table_exists and delete_tables:
+                            gcp_utils.delete_bigquery_table(
+                                dataset_id=dataset_id,
+                                table_id=table_config["table_name"],
+                            )
+                            table_exists = False
+                        if not table_exists or delete_tables:
+                            parsed_schema = gcp_utils.parse_bq_schema(
+                                schema_config=table_config["schema"]
+                            )
+                            gcp_utils.create_bigquery_table(
+                                dataset_id=dataset_id,
+                                table_id=table_config["table_name"],
+                                schema=parsed_schema,
+                                partition_field=table_config.get("partition_field"),
+                                clustering_fields=table_config.get("clustering_fields"),
+                            )
+                        else:
+                            print(
+                                f"Table {dataset_id}.{table_id} already exists. Skipping creation..."
+                            )
 
     drop_and_create_tables()
 

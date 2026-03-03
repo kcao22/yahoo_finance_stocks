@@ -1,10 +1,9 @@
 import os
+
 import yaml
-
 from airflow.models import Variable
-from google.cloud import bigquery, storage
-
 from apps.print_utils import print_logging_info_decorator
+from google.cloud import bigquery, storage
 
 
 def _create_client(service: str) -> set:
@@ -123,7 +122,7 @@ def delete_bigquery_table(dataset_id: str, table_id: str):
     client = _create_client(service="bq")
     dataset_ref = client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
-    client.delete_table(table_ref, delete_contents=True, not_found_ok=True)
+    client.delete_table(table_ref, not_found_ok=True)
     print(f"Table {dataset_id}.{table_id} deleted.")
 
 
@@ -272,10 +271,12 @@ def _build_using_statement(ods_config: list[dict], file_name: str) -> str:
     lines = []
     for field in ods_config:
         name = field["name"]
-        if name not in {"load_datetime", "load_filename"}:
-            dtype = "FLOAT64" if field["type"].upper() == "FLOAT" else field["type"].upper()
+        if name not in {"load_date", "load_filename"}:
+            dtype = (
+                "FLOAT64" if field["type"].upper() == "FLOAT" else field["type"].upper()
+            )
             lines.append(f"SAFE_CAST(S.{name} AS {dtype}) AS {name}")
-    lines.append("CURRENT_DATE() AS load_datetime")
+    lines.append("CURRENT_DATE() AS load_date")
     lines.append(f"'{file_name}' AS load_filename")
     return ",\n".join(lines)
 
@@ -290,9 +291,9 @@ def _build_update_statement(ods_config: list[dict], file_name: str) -> str:
     lines = []
     for field in ods_config:
         name = field["name"]
-        if name not in {"load_datetime", "load_filename"}:
+        if name not in {"load_date", "load_filename"}:
             lines.append(f"D.{name} = S.{name}")
-    lines.append("D.load_datetime = CURRENT_DATE()")
+    lines.append("D.load_date = CURRENT_DATE()")
     lines.append(f"D.load_filename = '{file_name}'")
     return ",\n".join(lines)
 
@@ -308,10 +309,10 @@ def _build_insert_statement(ods_config: list[dict], file_name: str) -> str:
     values = []
     for field in ods_config:
         name = field["name"]
-        if name not in {"load_datetime", "load_filename"}:
+        if name not in {"load_date", "load_filename"}:
             names.append(name)
             values.append(f"S.{name}")
-    names += ["load_datetime", "load_filename"]
+    names += ["load_date", "load_filename"]
     values += ["CURRENT_DATE()", f"'{file_name}'"]
     cols_str = ",\n".join(names)
     vals_str = ", ".join(values)
@@ -330,7 +331,9 @@ def _build_primary_keys_statement(primary_keys: list[str]) -> str:
 
 
 @print_logging_info_decorator
-def generate_merge_query(dataset_id: str, table_id: str, primary_keys: list, file_name: str):
+def generate_merge_query(
+    dataset_id: str, table_id: str, primary_keys: list, file_name: str
+):
     """Generate a BigQuery MERGE query to merge ingress into ODS.
 
     :param dataset_id: Logical dataset/source name used in config and table
@@ -387,12 +390,13 @@ def execute_bq_query(
     job_config = None
     dataset_ref = None
     table_ref = None
-    if dataset_id and table_id and write_disposition:  # supported append / replace write dispositions
+    if (
+        dataset_id and table_id and write_disposition
+    ):  # supported append / replace write dispositions
         dataset_ref = client.dataset(dataset_id)
         table_ref = dataset_ref.table(table_id)
         job_config = bigquery.QueryJobConfig(
-            destination=table_ref,
-            write_disposition=write_disposition
+            destination=table_ref, write_disposition=write_disposition
         )
     query_job = client.query(query, job_config=job_config)
     return query_job.result()
