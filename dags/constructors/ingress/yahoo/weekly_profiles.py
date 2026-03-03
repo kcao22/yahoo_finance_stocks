@@ -4,9 +4,9 @@ import pandas
 import pendulum
 from airflow.decorators import dag, task
 from airflow.models import Variable
+from airflow.models.param import Param
 from airflow.operators.python import get_current_context
 from airflow.utils.task_group import TaskGroup
-from airflow.utils.param import Param
 from apps import af_utils, gcp_utils
 from apps.data_source_utils.yahoo_finance_config import SP_500_CONFIG
 from apps.file_loader import BigQueryFileLoader
@@ -23,9 +23,9 @@ from apps.webscraper_utils import YahooFinanceScraper
         "symbols": Param(
             default="",
             type=["string", "null"],
-            description="Comma-separated list of company symbols to scrape."
+            description="Comma-separated list of company symbols to scrape.",
         )
-    }
+    },
 )
 def dag():
 
@@ -38,13 +38,16 @@ def dag():
                 company_symbols = []
                 context = get_current_context()
                 if context["params"]["symbols"]:
-                    company_symbols = [symbol.strip() for symbol in context["params"]["symbols"].split(",")]
+                    company_symbols = [
+                        symbol.strip()
+                        for symbol in context["params"]["symbols"].split(",")
+                    ]
                 else:
                     company_symbols = [config["symbol"] for config in SP_500_CONFIG]
                 return await scraper.scrape_companies_data(
                     company_symbols=company_symbols,
                     stock_or_profile="profile",
-                    max_concurrency=10
+                    max_concurrency=50,
                 )
 
         all_data = asyncio.run(run_scraper())
