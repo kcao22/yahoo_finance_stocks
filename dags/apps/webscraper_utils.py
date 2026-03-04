@@ -105,22 +105,30 @@ class YahooFinanceScraper(WebScraper):
         retry_fields = ["open", "previous_close", "bid", "ask", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_full_time_employees"]
         for attempt in range(max_retries):
             page = None
+            current_context = None
             try:
                 # Adding a random stagger to individual scraping to avoid bot detection during semaphore parallelized calls
                 random_stagger = random.uniform(0.5, 3.0)
                 await asyncio.sleep(random_stagger)
                 # Launch with context to use specific user agent settings / viewport settings
                 # Browser is also heavier / more resource intensive
-                page = await self.context.new_page()
+                # Creating a new context and page for each scrape attempt
+                current_context = await self.browser.new_context(
+                    user_agent=self._get_random_user_agent(),
+                    viewport={"width": 1920, "height": 1080}
+                )
+                page = await current_context.new_page()
                 print(f"(Attempt {attempt + 1}/{max_retries}) for company {company_symbol}...")
                 print(f"Navigating to {extract_url}...")
                 # Proceed once basic HTML loads
-                await page.goto(extract_url, wait_until="commit", timeout=60000)
+                await page.goto(extract_url, wait_until="domcontentloaded", timeout=60000)
                 if extract_url.endswith("/profile"):
                     try:
                         await page.wait_for_selector("a[href*='/sectors/']", timeout=10000)
                     except Exception as e:
                         print(f"Time out waiting for profile links for {company_symbol}: {e}. Proceeding anyways.")
+                elif extract_url.endswith(company_symbol):
+                    await page.wait_for_selector("[data-field='regularMarketPreviousClose']", timeout=60000)
                 data = {"company_symbol": company_symbol}
                 for extract_mappings in extract_config:
                     # Extract data from page

@@ -532,12 +532,12 @@ DAILY_EXTRACT_CONFIG = [
     {
         "target_field": "volume",  # Number of shares traded today
         "locator_desc": "Volume",
-        "selector_field": "[data-field='regularMarketVolume']",
+        "selector_field": "fin-streamer[data-field='regularMarketVolume']",
     },
     {
         "target_field": "avg_volume",  # Average daily traded volume over X period
         "locator_desc": "Avg Volume",
-        "selector_field": "[data-field='averageVolume']",
+        "selector_field": "fin-streamer[data-field='averageVolume']",
     },
     {
         "target_field": "intraday_market_cap",  # Total value of all oustanding shares
