@@ -34,4 +34,4 @@ def get_current_timestamp_str() -> str:
 
     :return: String representing the current timestamp.
     """
-    return pendulum.now().strftime("%Y%m%d-%H:%M:%S")
+    return pendulum.now().strftime("%Y%m%d-%H%M%S")

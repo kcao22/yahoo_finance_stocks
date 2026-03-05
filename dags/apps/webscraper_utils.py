@@ -87,6 +87,21 @@ class WebScraper:
             print(f"No {locator_desc} detected.")
             return "N/A"
 
+    async def _restart_playwright(self):
+        """
+        Helper method to restart playwright browser.
+        """
+        if self.browser:
+            await self.browser.close()
+        self.browser = await self.playwright.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox", 
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage"
+            ]
+        )
+
 
 class YahooFinanceScraper(WebScraper):
     def __init__(self, websocket_endpoint: str = "ws://playwright-browser:3000/"):
@@ -102,7 +117,7 @@ class YahooFinanceScraper(WebScraper):
         :return: Dictionary of extracted stock data for given company
         """
         extract_url = f"{self.base_url}/{company_symbol}" if extract_config == DAILY_EXTRACT_CONFIG else f"{self.base_url}/{company_symbol}/profile"
-        retry_fields = ["open", "previous_close", "bid", "ask", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_full_time_employees"]
+        retry_fields = ["open", "previous_close", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_full_time_employees"]
         for attempt in range(max_retries):
             page = None
             current_context = None
@@ -122,13 +137,17 @@ class YahooFinanceScraper(WebScraper):
                 print(f"Navigating to {extract_url}...")
                 # Proceed once basic HTML loads
                 await page.goto(extract_url, wait_until="domcontentloaded", timeout=60000)
+                await asyncio.sleep(random.uniform(1, 3))  # Buffer to allow potential re-routing from invalid symbol
+                if "lookup" in page.url or "404" in page.url:
+                    raise ValueError(f"Invalid Symbol: {company_symbol}")
                 if extract_url.endswith("/profile"):
                     try:
                         await page.wait_for_selector("a[href*='/sectors/']", timeout=10000)
                     except Exception as e:
                         print(f"Time out waiting for profile links for {company_symbol}: {e}. Proceeding anyways.")
                 elif extract_url.endswith(company_symbol):
-                    await page.wait_for_selector("[data-field='regularMarketPreviousClose']", timeout=60000)
+                    await page.wait_for_selector("h1", timeout=30000)
+                    await asyncio.sleep(random.uniform(1, 5))
                 data = {"company_symbol": company_symbol}
                 for extract_mappings in extract_config:
                     # Extract data from page
@@ -154,12 +173,15 @@ class YahooFinanceScraper(WebScraper):
                     data = {"company_symbol": company_symbol}
                     for extract_mappings in extract_config:
                         data[extract_mappings["target_field"]] = None
-                    print(f"\n{'*' * 100}\n{company_symbol} failed extraction. Please re-run.\n{'*' * 100}")
-                    return data
-
+                    raise ValueError(f"\n{'*' * 100}\n{company_symbol} failed extraction. Please re-run.\n{'*' * 100}")
                 else:
                     print(f"Retrying scrape for {company_symbol}...")
                     await asyncio.sleep(2 ** attempt + 1 + random.uniform(0, 1))  # Exponential backoff before retrying
+            finally:  # Ensure page and context are closed regardless of results.
+                if page:
+                    await page.close()
+                if current_context:
+                    await current_context.close()
 
     @print_logging_info_decorator
     async def scrape_companies_data(self, company_symbols: list[str], stock_or_profile: str, max_concurrency: int = 10) -> list[dict]:
@@ -176,11 +198,17 @@ class YahooFinanceScraper(WebScraper):
             extract_config = DAILY_EXTRACT_CONFIG
         else:
             extract_config = DIM_DATA_EXTRACT_CONFIG
+        results = []
         semaphore = asyncio.Semaphore(max_concurrency)
+        for i in range(0, len(company_symbols), max_concurrency):
+            batch = company_symbols[i: i + max_concurrency]
+            print(f"Starting batch {i//max_concurrency + 1}...")
+            await self._restart_playwright()
+            tasks = [self.sem_task(symbol, semaphore, extract_config) for symbol in batch]
+            batch_results = await asyncio.gather(*tasks)
+            results.extend(batch_results)
+        return results
 
-        async def sem_task(symbol):
-            async with semaphore:
-                return await self.scrape_company_data(company_symbol=symbol, extract_config=extract_config)
-
-        tasks = [sem_task(symbol) for symbol in company_symbols]
-        return await asyncio.gather(*tasks)
+    async def sem_task(self, symbol, semaphore, extract_config):
+        async with semaphore:
+            return await self.scrape_company_data(company_symbol=symbol, extract_config=extract_config)

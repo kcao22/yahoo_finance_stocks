@@ -47,7 +47,7 @@ def dag():
                 return await scraper.scrape_companies_data(
                     company_symbols=company_symbols,
                     stock_or_profile="stock",
-                    max_concurrency=25,
+                    max_concurrency=10,
                 )
 
         all_data = asyncio.run(run_scraper())
