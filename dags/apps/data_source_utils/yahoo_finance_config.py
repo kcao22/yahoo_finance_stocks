@@ -84,7 +84,6 @@ SP_500_CONFIG = [
     {"symbol": "PANW", "name": "Palo Alto Networks, Inc."},
     {"symbol": "ADP", "name": "Automatic Data Processing, Inc."},
     {"symbol": "DE", "name": "Deere & Company"},
-    {"symbol": "FI", "name": "Fiserv, Inc."},
     {"symbol": "BMY", "name": "Bristol-Myers Squibb Company"},
     {"symbol": "LMT", "name": "Lockheed Martin Corporation"},
     {"symbol": "GILD", "name": "Gilead Sciences, Inc."},
