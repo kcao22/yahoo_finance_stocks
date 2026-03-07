@@ -1,3 +1,4 @@
+# Swapping out base Airflow image for Astronomer 
 FROM apache/airflow:2.11.0
 
 USER root
@@ -23,9 +24,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN python -m venv /usr/local/airflow/dbt-env && \
+    /usr/local/airflow/dbt-env/bin/pip install --no-cache-dir dbt-bigquery
+
 USER airflow
 
 COPY requirements.txt /tmp/requirements.txt
+
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 RUN playwright install chromium
