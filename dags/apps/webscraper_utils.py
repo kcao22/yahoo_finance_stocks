@@ -116,8 +116,8 @@ class YahooFinanceScraper(WebScraper):
         :param extract_config: The config list of dictionaries outlining target field and corresponding CSS selector for extraction.
         :return: Dictionary of extracted stock data for given company
         """
-        extract_url = f"{self.base_url}/{company_symbol}" if extract_config == DAILY_EXTRACT_CONFIG else f"{self.base_url}/{company_symbol}/profile"
-        retry_fields = ["open", "previous_close", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_full_time_employees"]
+        extract_url = f"{self.base_url}/{company_symbol}"
+        retry_fields = ["open", "previous_close", "volume", "avg_volume", "day_range"] if extract_config == DAILY_EXTRACT_CONFIG else ["company_sector", "company_industry", "company_full_time_employees"]
         for attempt in range(max_retries):
             page = None
             current_context = None
@@ -140,11 +140,13 @@ class YahooFinanceScraper(WebScraper):
                 await asyncio.sleep(random.uniform(1, 3))  # Buffer to allow potential re-routing from invalid symbol
                 if "lookup" in page.url or "404" in page.url:
                     raise ValueError(f"Invalid Symbol: {company_symbol}")
-                if extract_url.endswith("/profile"):
-                    try:
-                        await page.wait_for_selector("a[href*='/sectors/']", timeout=10000)
-                    except Exception as e:
-                        print(f"Time out waiting for profile links for {company_symbol}: {e}. Proceeding anyways.")
+                if extract_config != DIM_DATA_EXTRACT_CONFIG:
+                    expand_button = page.locator('button[data-testid="accordionItem"]:has-text("Overview")')
+                    if await expand_button.count() > 0:
+                        is_expanded = await expand_button.get_attribute("aria-expanded")
+                        if is_expanded == "false":
+                            await expand_button.click()
+                            await asyncio.sleep(1)
                 elif extract_url.endswith(company_symbol):
                     await page.wait_for_selector("h1", timeout=30000)
                     await asyncio.sleep(random.uniform(1, 5))

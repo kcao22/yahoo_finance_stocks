@@ -183,46 +183,26 @@ DIM_DATA_EXTRACT_CONFIG = [
     {
         "target_field": "company_name",
         "locator_desc": "Company Name",
-        "selector_field": "[data-testid='quote-title']",
-    },
-    {
-        "target_field": "company_address",
-        "locator_desc": "Company Address",
-        "selector_field": "div[class^='address']",
-    },
-    {
-        "target_field": "company_phone_number",
-        "locator_desc": "Company Phone Number",
-        "selector_field": "a[aria-label='phone number']",
-    },
-    {
-        "target_field": "company_website",
-        "locator_desc": "Company Website",
-        "selector_field": "a[aria-label='website link']",
+        "selector_field": "button[data-testid='accordionItem'] h2 span.font-condensed",
     },
     {
         "target_field": "company_sector",
         "locator_desc": "Company Sector",
-        "selector_field": "a[href^='/sectors/'] >> nth=0"
+        "selector_field": "div.infoSection:has(h3:text('Sector')) p a"
     },
     {
         "target_field": "company_industry",
         "locator_desc": "Company Industry",
-        "selector_field": "a[href^='/sectors/'] >> nth=1"
+        "selector_field": "div.infoSection:has(h3:text('Industry')) p a"
     },
     {
         "target_field": "company_full_time_employees",
         "locator_desc": "Company Full Time Employees",
-        "selector_field": "dt:has-text('Full Time Employees') + dd strong"
+        "selector_field": "div.infoSection:has(h3:text('Full Time Employees')) p"
     },
     {
         "target_field": "company_description",
         "locator_desc": "Company Description",
-        "selector_field": "[data-testid='description']"
-    },
-    {
-        "target_field": "company_corporate_governance_score",
-        "locator_desc": "Company Corporate Governance Score",
-        "selector_field": "[data-testid='corporate-governance']"
+        "selector_field": "div.descriptionContainer p.yf-z5w6qk"
     }
 ]

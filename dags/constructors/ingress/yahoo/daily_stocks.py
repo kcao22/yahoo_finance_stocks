@@ -52,11 +52,11 @@ def dag():
 
         all_data = asyncio.run(run_scraper())
         df = pandas.DataFrame(all_data)
-        df.to_csv(f"/tmp/daily_stocks_{curr_timestamp}.csv", index=False)
+        df.to_csv(f"/tmp/stocks{curr_timestamp}.csv", index=False)
         gcp_utils.upload_to_gcs(
             bucket_name=Variable.get("ingress_bucket"),
-            source_file_path=f"/tmp/daily_stocks_{curr_timestamp}.csv",
-            destination_blob_name=f"data_sources/yahoo/stocks/daily_stocks_{curr_timestamp}.csv",
+            source_file_path=f"/tmp/stocks{curr_timestamp}.csv",
+            destination_blob_name=f"data_sources/yahoo/stocks/stocks{curr_timestamp}.csv",
         )
 
     with TaskGroup("ingest_data") as ingest_data:

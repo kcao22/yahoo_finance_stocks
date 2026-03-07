@@ -50,12 +50,9 @@ sources:
         schema:
           - {name: "company_symbol", type: "STRING"}
           - {name: "company_name", type: "STRING"}
-          - {name: "company_address", type: "STRING"}
-          - {name: "company_phone_number", type: "STRING"}
-          - {name: "company_website", type: "STRING"}
           - {name: "company_sector", type: "STRING"}
           - {name: "company_industry", type: "STRING"}
-          - {name: "company_full_time_employees", type: "INT64"}
+          - {name: "company_full_time_employees", type: "STRING"}
           - {name: "company_description", type: "STRING"}
 
       - table_name: "profiles"
@@ -63,14 +60,10 @@ sources:
         schema:
           - {name: "company_symbol", type: "STRING", mode: "REQUIRED"}
           - {name: "company_name", type: "STRING"}
-          - {name: "company_address", type: "STRING"}
-          - {name: "company_phone_number", type: "STRING"}
-          - {name: "company_website", type: "STRING"}
           - {name: "company_sector", type: "STRING"}
           - {name: "company_industry", type: "STRING"}
-          - {name: "company_full_time_employees", type: "INT64"}
+          - {name: "company_full_time_employees", type: "STRING"}
           - {name: "company_description", type: "STRING"}
-          - {name: "company_corporate_governance_score", type: "STRING"}
           - {name: "load_date", type: "DATE", mode: "REQUIRED"}
           - {name: "load_filename", type: "STRING"}
         partition_field: "load_date"
