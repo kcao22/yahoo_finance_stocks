@@ -1,0 +1,75 @@
+version: 2
+
+models:
+  - name: clean_profiles
+    description: "incremental table containing cleaned company metadata from yahoo finance. Unique at the ticker and load_date level."
+    columns:
+      - name: pk_ticker_date
+        description: "primary key: hash of company_symbol and load_date."
+        tests:
+          - unique
+          - not_null
+      - name: company_symbol
+        description: "the stock ticker symbol (e.g., aapl)."
+      - name: company_name
+        description: "the full legal name of the company."
+      - name: company_sector
+        description: "the high-level economic sector (e.g., technology)."
+      - name: company_industry
+        description: "the specific industry classification (e.g., consumer electronics)."
+      - name: company_full_time_employees
+        description: "integer count of employees with commas removed during cleaning."
+      - name: company_description
+        description: "long-form text describing the company business operations."
+      - name: load_date
+        description: "the date of the stock profile web scrape."
+      - name: load_filename
+        description: "the source file name from which the record was loaded."
+
+  - name: clean_stocks
+    description: "Incremental table containing cleaned daily stock price and risk metrics. Unique at the ticker and load_date level."
+    columns:
+      - name: pk_ticker_date
+        description: "primary key: hash of company_symbol and load_date."
+        tests:
+          - unique
+          - not_null
+      - name: company_symbol
+        description: "the stock ticker symbol."
+      - name: previous_close_price
+        description: "the closing price from the previous trading day."
+      - name: open_price
+        description: "the price at which the stock began trading today."
+      - name: bid_price
+        description: "the highest price a buyer is willing to pay."
+      - name: bid_size
+        description: "the quantity of shares available at the bid price."
+      - name: ask_price
+        description: "the lowest price a seller is willing to accept."
+      - name: ask_size
+        description: "the quantity of shares available at the ask price."
+      - name: day_low
+        description: "the lowest price reached during the current trading session."
+      - name: day_high
+        description: "the highest price reached during the current trading session."
+      - name: company_market_value
+        description: "normalized market cap in dollars (calculated from t/b/m/k suffixes)."
+      - name: stock_volatility
+        description: "the beta (5y monthly) value representing market-relative risk."
+      - name: price_to_earnings_ratio
+        description: "ttm pe ratio converted to float64."
+      - name: earnings_per_share
+        description: "ttm earnings per share."
+      - name: forward_dividend_payout
+        description: "expected annual dollar amount paid per share."
+      - name: forward_dividend_yield
+        description: "dividend yield expressed as a decimal (e.g., 0.03 for 3%)."
+      - name: ex_dividend_date
+        description: "the date by which you must own the stock to receive the next dividend."
+      - name: one_year_target_estimate
+        description: "analyst consensus price target for 12 months out."
+      - name: load_date
+        description: "the date of the stock data web scrape."
+      - name: load_filename
+        description: "the source file name from which the record was loaded."
+  

@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: dim_companies
+    description: "slowly changing dimension (scd type 2) tracking company metadata history. captures changes in employee counts and sector classifications over time."
+    columns:
+      - name: pk_ticker_date
+        description: "primary key: unique hash for this specific version of the company profile."
+        tests:
+          - unique
+          - not_null
+      - name: company_symbol
+        description: "the stock ticker symbol (e.g., aapl)."
+        tests:
+          - not_null
+      - name: company_name
+        description: "the full legal name of the corporation."
+      - name: company_sector
+        description: "the broad economic sector."
+      - name: company_industry
+        description: "the specific industry classification."
+      - name: company_full_time_employees
+        description: "cleaned integer count of employees at the time of this load."
+      - name: company_description
+        description: "the official company business summary."
+      - name: valid_from
+        description: "the start date of this record's validity period."
+      - name: valid_to
+        description: "the end date of this record's validity period (9999-12-31 for current records)."
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= valid_from"
+      - name: is_current_day
+        description: "boolean flag indicating if this is the most recently loaded record for the company."
+
+  - name: fact_stocks
+    description: "daily fact table containing trading metrics, valuation ratios, and risk scores."
+    columns:
+      - name: pk_ticker_date
+        description: "primary key: hash of company_symbol and load_date."
+        tests:
+          - unique
+          - not_null
+      - name: company_symbol
+        description: "ticker symbol; foreign key to dim_companies."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_companies')
+              field: company_symbol
+      - name: previous_close
+        description: "last traded price from the prior session."
+      - name: open_price
+        description: "the opening price for the current load_date."
+      - name: bid_price
+        description: "highest price a buyer is currently offering."
+      - name: bid_size
+        description: "number of shares available at the bid price."
+      - name: ask_price
+        description: "lowest price a seller is currently accepting."
+      - name: ask_size
+        description: "number of shares available at the ask price."
+      - name: day_low
+        description: "lowest price traded during this session."
+      - name: day_high
+        description: "highest price traded during this session."
+      - name: company_market_value
+        description: "normalized market capitalization in usd."
+      - name: stock_volatility
+        description: "the beta (5y monthly) risk multiplier."
+      - name: price_to_earnings_ratio
+        description: "ttm price-to-earnings valuation ratio."
+      - name: earnings_per_share
+        description: "ttm earnings per share (eps)."
+      - name: forward_dividend_payout
+        description: "projected annual dividend amount in dollars."
+      - name: forward_dividend_yield
+        description: "projected annual dividend yield as a decimal."
+      - name: ex_dividend_date
+        description: "the cutoff date to receive the next scheduled dividend."
+      - name: one_year_target_estimate
+        description: "median analyst 12-month price target."
+      - name: load_date
+        description: "the date of data capture."

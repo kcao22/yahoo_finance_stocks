@@ -1,0 +1,58 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: ods_yahoo
+    tables:
+      - name: stocks
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - company_symbol
+                - load_date
+        columns:
+          - name: company_symbol
+            tests:
+              - not_null
+          - name: previous_close
+          - name: open
+          - name: bid
+          - name: ask
+          - name: day_range
+          - name: volume
+          - name: avg_volume
+          - name: intraday_market_cap
+          - name: beta
+          - name: pe_ratio
+          - name: eps
+          - name: earnings_date
+          - name: forward_dividend_and_yield
+          - name: ex_dividend_date
+          - name: one_year_target_estimate
+          - name: load_date
+            tests:
+              - not_null
+          - name: load_filename
+            tests:
+              - not_null
+      - name: profiles
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - company_symbol
+                - load_date
+        columns:
+          - name: company_symbol
+            tests:
+              - not_null
+          - name: company_name
+          - name: company_sector
+          - name: company_industry
+          - name: company_full_time_employees
+          - name: company_description
+          - name: load_date
+            tests:
+              - not_null
+          - name: load_filename
+            tests:
+              - not_null
