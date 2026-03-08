@@ -73,9 +73,9 @@ resource "google_bigquery_dataset" "dbt_intermediate_datasets" {
   depends_on                  = [ google_project_service.bigquery_api ]
 }
 
-resource "google_bigquery_dataset" "dbt_mart_datasets" {
+resource "google_bigquery_dataset" "dbt_marts_datasets" {
 
-  dataset_id                  = "dbt_mart"
+  dataset_id                  = "dbt_marts"
   description                 = "Schema for holding dbt mart models"
   location                    = var.region
   delete_contents_on_destroy  = true
