@@ -33,7 +33,7 @@ models:
   star:
     intermediate:
       +materialized: view
-      +dataset: dbt_intermediate
+      +dataset: intermediate
     marts:
       +materialized: table
-      +dataset: dbt_marts
+      +dataset: marts
