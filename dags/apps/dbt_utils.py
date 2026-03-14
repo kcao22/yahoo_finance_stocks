@@ -1,10 +1,8 @@
 import os
 
 from airflow.models import Variable
-from cosmos.profiles import (
-    GoogleCloudServiceAccountFileProfileMapping,
+from cosmos import (
     DbtTaskGroup,
-    DbtGraph,
     ExecutionConfig,
     ProfileConfig,
     ProjectConfig,
@@ -15,6 +13,8 @@ from cosmos.constants import (
     ExecutionMode,
     LoadMode
 )
+from cosmos.dbt.graph import DbtGraph
+from cosmos.profiles import GoogleCloudServiceAccountFileProfileMapping 
 
 
 def _get_profile_config(target_name: str) -> ProfileConfig:
@@ -34,16 +34,17 @@ def _get_profile_config(target_name: str) -> ProfileConfig:
 def _get_project_config(dbt_project_path: str) -> ProjectConfig:
     return ProjectConfig(
         dbt_project_path=dbt_project_path,
+        manifest_path=f"{dbt_project_path}/target/manifest.json",
         install_dbt_deps=True
     )
 
 
-def _get_render_config(select: list[str]) -> RenderConfig:
+def _get_render_config(select: list[str] = None) -> RenderConfig:
     return RenderConfig(
         select=select,
         emit_datasets=False,
         test_behavior=TestBehavior.AFTER_EACH,
-        load_method=LoadMode.DBT_LS,
+        load_method=LoadMode.DBT_MANIFEST,
     )
 
 
