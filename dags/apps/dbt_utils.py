@@ -19,11 +19,11 @@ from cosmos.profiles import GoogleCloudServiceAccountFileProfileMapping
 
 def _get_profile_config(target_name: str) -> ProfileConfig:
     return ProfileConfig(
-        profile_name="dbt_warehouse",
+        profile_name="star",
         target_name=target_name,
         profile_mapping=GoogleCloudServiceAccountFileProfileMapping(
             project_id=Variable.get("gcp_project_id"),
-            keyfile_path="/opt/airflow/gcp/application-default-credentials.json",
+            keyfile_path=Variable.get("gcp_key_path"),
             profile_args={
                 "dataset": "dbt"  # _intermediate and _marts will append to base dataset name
             }
@@ -35,6 +35,10 @@ def _get_project_config(dbt_project_path: str) -> ProjectConfig:
     return ProjectConfig(
         dbt_project_path=dbt_project_path,
         manifest_path=f"{dbt_project_path}/target/manifest.json",
+        env_vars={
+            "AIRFLOW_VAR_GCP_PROJECT_ID": Variable.get("gcp_project_id"),
+            "AIRFLOW_VAR_GCP_KEY_PATH": Variable.get("gcp_key_path")
+        },
         install_dbt_deps=True
     )
 

@@ -220,3 +220,11 @@ terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform.tfstate
 terraform/terraform.tfstate.backup
+
+
+# dbt
+dbt_packages/
+target/
+logs/
+.user.yml
+
