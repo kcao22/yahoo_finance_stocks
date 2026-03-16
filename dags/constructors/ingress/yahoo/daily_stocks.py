@@ -70,7 +70,12 @@ def dag():
         )
         file_loader.build_dag()
 
-    scrape_daily_stocks() >> ingest_data
+    with TaskGroup("run_dbt") as run_dbt:
+        from apps.dbt_utils import create_dag_dbt_run_schedule
+
+        create_dag_dbt_run_schedule(select=["tag:daily"])
+
+    scrape_daily_stocks() >> ingest_data >> run_dbt
 
 
 dag()

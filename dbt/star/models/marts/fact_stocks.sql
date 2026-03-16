@@ -1,3 +1,5 @@
+{{ config(tags=["daily"]) }}
+
 with
     stocks as (
         select
