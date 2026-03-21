@@ -3,8 +3,8 @@ star:
   outputs:
     prod:
       type: bigquery
-      method: service-account
+      method: oauth
       project: "{{ env_var('AIRFLOW_VAR_GCP_PROJECT_ID') }}"
       dataset: dbt
+      location: us-west1
       threads: 1
-      keyfile: "{{ env_var('AIRFLOW_VAR_GCP_KEY_PATH')}}"
