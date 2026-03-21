@@ -1,0 +1,30 @@
+{% snapshot dim_sectors %}
+
+{{
+    config(
+        target_schema='snapshots',
+        unique_key='company_symbol',
+        strategy='check',
+        check_cols=['company_sector']
+    )
+}}
+
+with latest_profiles as (
+    select
+        company_symbol,
+        company_sector,
+        load_date
+    from (
+        select *, row_number() over (partition by company_symbol order by load_date desc) as rn
+        from {{ ref('clean_profiles') }}
+    )
+    where rn = 1
+)
+
+select
+    company_symbol,
+    company_sector,
+    load_date
+from latest_profiles
+
+{% endsnapshot %}
