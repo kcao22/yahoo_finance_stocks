@@ -9,6 +9,7 @@ from airflow.operators.python import get_current_context
 from airflow.utils.task_group import TaskGroup
 from apps import af_utils, gcp_utils
 from apps.data_source_utils.yahoo_finance_config import SP_500_CONFIG
+from apps.dbt_utils import create_dag_dbt_run_schedule
 from apps.file_loader import BigQueryFileLoader
 from apps.webscraper_utils import YahooFinanceScraper
 
@@ -70,11 +71,7 @@ def dag():
         )
         file_loader.build_dag()
 
-    with TaskGroup("run_dbt") as run_dbt:
-        from apps.dbt_utils import create_dag_dbt_run_schedule
-
-        create_dag_dbt_run_schedule(select=["tag:daily"])
-
+    run_dbt = create_dag_dbt_run_schedule(select=["+fact_stocks"])
     scrape_daily_stocks() >> ingest_data >> run_dbt
 
 
