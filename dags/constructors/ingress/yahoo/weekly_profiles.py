@@ -71,8 +71,22 @@ def dag():
         )
         file_loader.build_dag()
 
-    run_dbt = create_dag_dbt_run_schedule(select=["clean_profiles+"])
-    scrape_weekly_profiles() >> ingest_data >> run_dbt
+    # Sequence snaphosts to ensure relationship tests pass
+    run_clean_and_companies = create_dag_dbt_run_schedule(
+        group_id="dbt_clean_and_companies", select=["clean_profiles", "dim_companies"]
+    )
+
+    run_other_marts = create_dag_dbt_run_schedule(
+        group_id="dbt_other_marts",
+        select=["dim_employees", "dim_industries", "dim_sectors"],
+    )
+
+    (
+        scrape_weekly_profiles()
+        >> ingest_data
+        >> run_clean_and_companies
+        >> run_other_marts
+    )
 
 
 dag()

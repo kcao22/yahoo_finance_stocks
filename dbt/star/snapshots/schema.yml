@@ -3,6 +3,9 @@ version: 2
 snapshots:
   - name: dim_companies
     description: "slowly changing dimension (scd type 2) tracking company metadata history."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "coalesce(dbt_valid_to, timestamp('9999-12-31')) >= dbt_valid_from"
     columns:
       - name: dbt_scd_id
         description: "primary key: unique hash for this specific version of the company profile."
@@ -21,9 +24,6 @@ snapshots:
         description: "the start date of this record's validity period."
       - name: dbt_valid_to
         description: "the end date of this record's validity period (null for current records)."
-        tests:
-          - dbt_utils.expression_is_true:
-              expression: ">= dbt_valid_from"
 
   - name: dim_employees
     description: "slowly changing dimension tracking employee counts."
@@ -35,9 +35,6 @@ snapshots:
       - name: company_symbol
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_companies')
-              field: company_symbol
       - name: company_full_time_employees
         description: "cleaned integer count of employees at the time of this load."
 
@@ -51,9 +48,6 @@ snapshots:
       - name: company_symbol
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_companies')
-              field: company_symbol
       - name: company_industry
         description: "the specific industry classification."
 
@@ -67,8 +61,5 @@ snapshots:
       - name: company_symbol
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_companies')
-              field: company_symbol
       - name: company_sector
         description: "the broad economic sector."

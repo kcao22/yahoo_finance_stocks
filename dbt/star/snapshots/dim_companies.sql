@@ -2,7 +2,7 @@
 
 {{
     config(
-        target_schema='marts',
+        target_schema='dbt_marts',
         unique_key='company_symbol',
         strategy='check',
         check_cols=['company_name', 'company_description']

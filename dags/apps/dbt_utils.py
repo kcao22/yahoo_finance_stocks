@@ -45,7 +45,11 @@ def _get_execution_config(dbt_executable_path: str) -> ExecutionConfig:
     )
 
 
-def create_dag_dbt_run_schedule(select: list[str], trigger_rule: str = "all_success"):
+def create_dag_dbt_run_schedule(
+    select: list[str],
+    group_id: str = "dbt_run_models_task_group",
+    trigger_rule: str = "all_success",
+):
     profile_config = _get_profile_config(target_name="prod")
     project_config = _get_project_config(dbt_project_path="/opt/airflow/dbt/star")
     render_config = _get_render_config(select=select)
@@ -53,7 +57,7 @@ def create_dag_dbt_run_schedule(select: list[str], trigger_rule: str = "all_succ
         dbt_executable_path="/usr/local/airflow/dbt-env/bin/dbt"
     )
     dbt_run_models_task_group = DbtTaskGroup(
-        group_id="dbt_run_models_task_group",
+        group_id=group_id,
         project_config=project_config,
         render_config=render_config,
         execution_config=execution_config,
@@ -62,7 +66,7 @@ def create_dag_dbt_run_schedule(select: list[str], trigger_rule: str = "all_succ
             "fail_fast": True,
             "cancel_query_on_kill": True,
             "trigger_rule": trigger_rule,
-            "dbt_cmd_global_flags": ["--debug"],
+            "dbt_cmd_global_flags": ["--debug", "--no-partial-parse"],
         },
     )
     return dbt_run_models_task_group
