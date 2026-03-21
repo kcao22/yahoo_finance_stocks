@@ -1,4 +1,8 @@
-{{ config(tags=["daily"]) }}
+{{ config(
+    materialized='incremental',
+    unique_key='pk_ticker_date',
+    tags=["daily"]
+) }}
 
 with
     stocks as (
@@ -23,6 +27,9 @@ with
             one_year_target_estimate,
             load_date
         from {{ ref('clean_stocks') }}
+        {% if is_incremental() %}
+            where load_date > (select coalesce(max(load_date), date('1900-01-01')) from {{ this }})
+        {% endif %}
     )
 
 select *

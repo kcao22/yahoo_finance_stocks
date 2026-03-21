@@ -1,7 +1,7 @@
 {{
   config(
     materialized='incremental',
-    unique_key='rpk_ticker_date'
+    unique_key='pk_ticker_date'
   )
 }}
 
@@ -11,7 +11,7 @@ with
         select
             company_symbol,
             previous_close,
-            open as raw_open,  -- renamed to avoid reserved word issues
+            open as raw_open,
             bid,
             ask,
             day_range,
@@ -27,7 +27,7 @@ with
             one_year_target_estimate,
             load_date,
             load_filename
-        from {{ source("raw", "stocks") }}  -- updated to match your source name 'yahoo'
+        from {{ source("raw", "stocks") }}
         {% if is_incremental() %}
             where load_date > (select max(load_date) from {{ this }})
         {% endif %}
