@@ -9,7 +9,7 @@ with
         select
             pk_ticker_date,
             company_symbol,
-            previous_close,
+            previous_close_price,
             open_price,
             bid_price,
             bid_size,
