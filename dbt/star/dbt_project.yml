@@ -36,5 +36,3 @@ models:
     marts:
       +materialized: table
       +dataset: marts
-
-packages-install-path: "/home/airflow/dbt_packages"
