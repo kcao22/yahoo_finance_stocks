@@ -2,7 +2,7 @@
 
 {{
     config(
-        target_schema='snapshots',
+        target_schema='marts',
         unique_key='company_symbol',
         strategy='check',
         check_cols=['company_name', 'company_description']
