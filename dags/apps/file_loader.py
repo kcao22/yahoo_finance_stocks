@@ -39,8 +39,10 @@ def fetch_ingress_ods_schema(data: dict):
     file_loader = BigQueryFileLoader()
     file_loader.deserialize(data)
 
-    file_loader.ingress_schema, file_loader.ods_schema = gcp_utils.fetch_ingress_ods_schemas(
-        source_name=file_loader.table_dataset_id, table_name=file_loader.table_id
+    file_loader.ingress_schema, file_loader.ods_schema = (
+        gcp_utils.fetch_ingress_ods_schemas(
+            source_name=file_loader.table_dataset_id, table_name=file_loader.table_id
+        )
     )
     return file_loader.serialize()
 
@@ -53,7 +55,9 @@ def get_most_recent_ingress_file(data: dict):
     most_recent_blob = None
     ingress_bucket = Variable.get("ingress_bucket")
     sorted_blobs = gcp_utils.list_gcs_bucket_blobs_by_update(
-        bucket_name=ingress_bucket, prefix=f"data_sources/{file_loader.table_dataset_id}/{file_loader.table_id}/", reverse=True
+        bucket_name=ingress_bucket,
+        prefix=f"data_sources/{file_loader.table_dataset_id}/{file_loader.table_id}/",
+        reverse=True,
     )
     if sorted_blobs:
         most_recent_blob = sorted_blobs[0].name
@@ -76,10 +80,12 @@ def archive_most_recent_ingress_file(data: dict):
         source_bucket_name=Variable.get("ingress_bucket"),
         source_blob_name=file_loader.most_recent_blob,
         destination_bucket_name=Variable.get("archive_bucket"),
-        destination_blob_name=file_loader.most_recent_blob
+        destination_blob_name=file_loader.most_recent_blob,
     )
 
-    file_loader.archive_blob_uri = f"gs://{Variable.get('archive_bucket')}/{file_loader.most_recent_blob}"
+    file_loader.archive_blob_uri = (
+        f"gs://{Variable.get('archive_bucket')}/{file_loader.most_recent_blob}"
+    )
 
     return file_loader.serialize()
 
@@ -105,7 +111,7 @@ def load_archive_file_to_ingress_table(data: dict):
     )
     gcp_utils.delete_gcs_blob(
         bucket_name=Variable.get("ingress_bucket"),
-        blob_name=file_loader.most_recent_blob
+        blob_name=file_loader.most_recent_blob,
     )
     return file_loader.serialize()
 
@@ -122,17 +128,26 @@ def write_ingress_to_ods(data: dict):
             dataset_id=file_loader.table_dataset_id,
             table_id=file_loader.table_id,
             primary_keys=file_loader.primary_keys,
-            file_name=file_loader.most_recent_blob_uri
+            file_name=file_loader.most_recent_blob_uri,
         )
     elif file_loader.operation == "append":
         query = gcp_utils.generate_select_from_ingress_query(
-            dataset_id=file_loader.table_dataset_id, table_id=file_loader.table_id, file_name=file_loader.most_recent_blob_uri
+            dataset_id=file_loader.table_dataset_id,
+            table_id=file_loader.table_id,
+            file_name=file_loader.most_recent_blob_uri,
         )
         write_disposition = "WRITE_APPEND"
     elif file_loader.operation == "replace":
         query = gcp_utils.generate_select_from_ingress_query(
-            dataset_id=file_loader.table_dataset_id, table_id=file_loader.table_id, file_name=file_loader.most_recent_blob_uri
+            dataset_id=file_loader.table_dataset_id,
+            table_id=file_loader.table_id,
+            file_name=file_loader.most_recent_blob_uri,
         )
         write_disposition = "WRITE_TRUNCATE"
-    gcp_utils.execute_bq_query(query=query, dataset_id=f"ods_{file_loader.table_dataset_id}", table_id=file_loader.table_id, write_disposition=write_disposition)
+    gcp_utils.execute_bq_query(
+        query=query,
+        dataset_id=f"ods_{file_loader.table_dataset_id}",
+        table_id=file_loader.table_id,
+        write_disposition=write_disposition,
+    )
     return file_loader.serialize()

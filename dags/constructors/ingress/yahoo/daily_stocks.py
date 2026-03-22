@@ -78,7 +78,7 @@ def dag():
         select=[
             "rpt_top_10_performing_stocks",
             "rpt_industry_growth_over_time",
-            "rpt_sector_growth_over_time"
+            "rpt_sector_growth_over_time",
         ],
     )
 

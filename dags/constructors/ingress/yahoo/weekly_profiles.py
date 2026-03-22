@@ -80,7 +80,12 @@ def dag():
         select=["dim_employees", "dim_industries", "dim_sectors"],
     )
 
-    scrape_weekly_profiles() >> ingest_data >> run_companies_models >> run_downstream_marts
+    (
+        scrape_weekly_profiles()
+        >> ingest_data
+        >> run_companies_models
+        >> run_downstream_marts
+    )
 
 
 dag()

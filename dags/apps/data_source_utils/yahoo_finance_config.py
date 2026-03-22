@@ -97,7 +97,7 @@ SP_500_CONFIG = [
     {"symbol": "GGB", "name": "Gerdau S.A."},
     {"symbol": "CDE", "name": "Coeur Mining, Inc."},
     {"symbol": "RUN", "name": "Sunrun Inc."},
-    {"symbol": "CSCO", "name": "Cisco Systems, Inc."}
+    {"symbol": "CSCO", "name": "Cisco Systems, Inc."},
 ]
 
 DAILY_EXTRACT_CONFIG = [
@@ -188,21 +188,21 @@ DIM_DATA_EXTRACT_CONFIG = [
     {
         "target_field": "company_sector",
         "locator_desc": "Company Sector",
-        "selector_field": "div.infoSection:has(h3:text('Sector')) p a"
+        "selector_field": "div.infoSection:has(h3:text('Sector')) p a",
     },
     {
         "target_field": "company_industry",
         "locator_desc": "Company Industry",
-        "selector_field": "div.infoSection:has(h3:text('Industry')) p a"
+        "selector_field": "div.infoSection:has(h3:text('Industry')) p a",
     },
     {
         "target_field": "company_full_time_employees",
         "locator_desc": "Company Full Time Employees",
-        "selector_field": "div.infoSection:has(h3:text('Full Time Employees')) p"
+        "selector_field": "div.infoSection:has(h3:text('Full Time Employees')) p",
     },
     {
         "target_field": "company_description",
         "locator_desc": "Company Description",
-        "selector_field": "div.descriptionContainer p.yf-z5w6qk"
-    }
+        "selector_field": "div.descriptionContainer p.yf-z5w6qk",
+    },
 ]
