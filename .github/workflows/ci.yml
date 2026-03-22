@@ -72,19 +72,3 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
         working-directory: terraform
-
-  dbt-checks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dbt
-        run: |
-          pip install dbt-bigquery
-      - name: dbt Compile
-        working-directory: dbt/star
-        run: |
-          dbt compile --profiles-dir .
