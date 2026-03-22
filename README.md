@@ -4,7 +4,7 @@
 ![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/yahoo_finance_stocks_elt.png)
 
 **Dashboard**:
-![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/)
+![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/dashboard.gif)
 
 **Dimensional Model Design**:
 ![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/erd_diagram.png)
