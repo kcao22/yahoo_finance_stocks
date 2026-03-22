@@ -58,7 +58,7 @@ jobs:
             -v ${{ github.workspace }}/docker:/opt/airflow/docker \
             -e PYTHONPATH=/opt/airflow/dags \
             ghcr.io/${{ github.repository_owner }}/yahoo_finance_stocks:latest \
-            bash -c "pip install --user --no-cache-dir -r /opt/airflow/docker/requirements.txt pytest pytest-mock pytest-asyncio && python -m pytest /opt/airflow/tests/"
+            bash -c "pip install --no-cache-dir -r /opt/airflow/docker/requirements.txt pytest pytest-mock pytest-asyncio && python -m pytest /opt/airflow/tests/"
 
 
   terraform-checks:
