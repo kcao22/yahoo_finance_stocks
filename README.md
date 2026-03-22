@@ -1,13 +1,13 @@
 # Yahoo Finance Stocks ELT Pipeline - Tracking Daily Stock Data and Market Profiles
 
 **ELT Pipeline Process**:
-![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/docs/yahoo_finance_stocks_elt.png)
+![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/yahoo_finance_stocks_elt.png)
 
 **Dashboard**:
-![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/docs/)
+![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/)
 
 **Dimensional Model Design**:
-![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/docs/erd_diagram.png)
+![Alt Text](https://github.com/kcao22/yahoo_finance_stocks/blob/main/docs/erd_diagram.png)
 
 ## Source Data
  - Yahoo Finance (Scraped via Playwright Stealth)
