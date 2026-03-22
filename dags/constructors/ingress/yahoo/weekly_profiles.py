@@ -18,7 +18,7 @@ from apps.webscraper_utils import YahooFinanceScraper
     dag_id=af_utils.get_dag_name(__file__),
     default_args=af_utils.get_default_args(),
     start_date=pendulum.datetime(2026, 3, 2, tz="US/Pacific"),
-    schedule_interval="0 19 * * 6",  # Saturday 7 PM
+    schedule_interval="0 20 * * 6",  # Saturday 8 PM
     catchup=False,
     params={
         "symbols": Param(
