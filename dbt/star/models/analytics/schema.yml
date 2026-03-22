@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: rpt_industry_growth_over_time
+    description: "Calculates the average percent growth from the earliest to latest open price for companies, aggregated by industry."
+    columns:
+      - name: industry
+        description: "The industry of the companies."
+      - name: avg_industry_growth_pct
+        description: "The average percent growth of the open price for companies in this industry."
+      - name: num_companies
+        description: "The number of companies included in this industry's calculation."
+
+  - name: rpt_sector_growth_over_time
+    description: "Calculates the average percent growth from the earliest to latest open price for companies, aggregated by sector."
+    columns:
+      - name: sector
+        description: "The sector of the companies."
+      - name: avg_sector_growth_pct
+        description: "The average percent growth of the open price for companies in this sector."
+      - name: num_companies
+        description: "The number of companies included in this sector's calculation."
+
+  - name: rpt_top_10_performing_stocks
+    description: "Shows the top 10 performing stocks based on the largest percentage increase in open price over the last available day (most recent vs previous available date)."
+    columns:
+      - name: company_symbol
+        description: "The stock ticker symbol."
+      - name: previous_open_price
+        description: "The open price on the previous available date."
+      - name: latest_open_price
+        description: "The open price on the most recent available date."
+      - name: absolute_increase
+        description: "The absolute difference between the latest and previous open prices."
+      - name: percent_increase
+        description: "The percentage increase from the previous to the latest open price."
+      - name: latest_date
+        description: "The most recent date the stock data was loaded."
+      - name: previous_date
+        description: "The date immediately preceding the latest date for this stock."

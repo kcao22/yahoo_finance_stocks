@@ -71,8 +71,18 @@ def dag():
         )
         file_loader.build_dag()
 
-    run_dbt = create_dag_dbt_run_schedule(select=["+fact_stocks"])
-    scrape_daily_stocks() >> ingest_data >> run_dbt
+    run_fact_stocks = create_dag_dbt_run_schedule(select=["+fact_stocks"])
+
+    run_analytics_rpts = create_dag_dbt_run_schedule(
+        group_id="run_analytics_rpts",
+        select=[
+            "rpt_top_10_performing_stocks",
+            "rpt_industry_growth_over_time",
+            "rpt_sector_growth_over_time"
+        ],
+    )
+
+    scrape_daily_stocks() >> ingest_data >> run_fact_stocks >> run_analytics_rpts
 
 
 dag()
