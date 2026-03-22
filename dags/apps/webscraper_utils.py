@@ -1,6 +1,5 @@
 import asyncio
 import random
-import pendulum
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
@@ -66,7 +65,8 @@ class WebScraper:
             print(f"{selector_desc} detected. Clicking...")
             # Click selector button
             await page.click(button_selector)
-        except:
+        except Exception as e:
+            print(f"Error locating {selector_desc}: {e}")
             print(f"No {selector_desc} detected. Continuing with scraping...")
             pass
 
